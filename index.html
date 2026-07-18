@@ -149,7 +149,7 @@
         }
     }
     
-    // ИСПРАВЛЕННАЯ ФУНКЦИЯ СОХРАНЕНИЯ С ОТЛАДКОЙ
+    // ИСПРАВЛЕННАЯ ФУНКЦИЯ СОХРАНЕНИЯ: теперь отправляет все поля
     async function saveAd() {
         const btn = document.getElementById('saveBtn'); 
         btn.disabled = true;
@@ -167,7 +167,9 @@
             price: document.getElementById('price').value, 
             desc: document.getElementById('desc').value, 
             category: document.getElementById('category').value, 
-            images: imgs.join('|') 
+            images: imgs.join('|'),
+            breed: document.getElementById('breed').value, // Исправлено: добавлено поле породы
+            city: document.getElementById('city').value    // Исправлено: добавлено поле города
         };
 
         const { data, error } = await sb.from('ads').insert([adData]);
@@ -194,7 +196,7 @@
                 ${imgs.map((i, idx) => `<img src="${i}" class="slider-img ${idx === 0 ? 'active' : ''}">`).join('')}
                 ${imgs.length > 1 ? `<button class="nav-btn" style="left:0" onclick="moveSlide(-1)">❮</button><button class="nav-btn" style="right:0" onclick="moveSlide(1)">❯</button>` : ''}
             </div>
-            <p>Цена: ${ad.price} грн</p><p>Описание: ${ad.desc}</p>
+            <p>Цена: ${ad.price} грн</p><p>Порода: ${ad.breed || 'Не указана'}</p><p>Город: ${ad.city || 'Не указан'}</p><p>Описание: ${ad.desc}</p>
             <div style="display:flex; margin-top:20px;">
                 <button class="action-btn btn-chat" onclick="openChat('${ad.id}')">Написать</button>
                 <a href="tel:${ad.phone}" class="action-btn btn-call">Позвонить</a>
