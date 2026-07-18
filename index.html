@@ -2,25 +2,26 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>ЗооРынок 🐾</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: sans-serif; }
-        body { background: #f2f4f5; padding-bottom: 100px; }
+        body { background: #f2f4f5; padding-bottom: 100px; width: 100%; overflow-x: hidden; }
         header { background: #002f34; color: white; padding: 15px; text-align: center; }
         .search-box { padding: 10px; background: white; }
         .search-input { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 20px; }
         .categories { display: flex; gap: 10px; padding: 10px; overflow-x: auto; background: white; }
         .cat-btn { padding: 8px 15px; border: 1px solid #002f34; border-radius: 20px; cursor: pointer; white-space: nowrap; }
         .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 15px; }
-        .card { background: white; border-radius: 8px; padding: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); overflow: hidden; }
-        .card img { width: 100%; height: 120px; object-fit: cover; border-radius: 5px; margin-bottom: 5px; cursor: pointer; }
+        .card { background: white; border-radius: 8px; padding: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        .card img { width: 100%; height: 120px; object-fit: cover; border-radius: 5px; margin-bottom: 5px; }
         .bottom-nav { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); display: flex; align-items: center; justify-content: space-around; background: #002f34; padding: 10px 20px; border-radius: 35px; width: 95%; max-width: 400px; color: white; z-index: 1000; }
         .btn-add-center { background: #ff5a5f; width: 60px; height: 60px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 35px; color: white; border: none; }
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 2000; align-items: center; justify-content: center; padding: 20px; }
         .content { background: white; width: 100%; max-width: 400px; padding: 20px; border-radius: 10px; max-height: 85vh; overflow-y: auto; }
         .field { width: 100%; margin-bottom: 10px; padding: 10px; border: 1px solid #ccc; border-radius: 5px; }
-        .action-btn { flex: 1; padding: 12px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; text-align: center; text-decoration: none; display: block; }
+        .action-btn { flex: 1; padding: 12px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; text-align: center; display: block; }
         .btn-chat { background: #002f34; color: white; }
         .btn-call { background: #28a745; color: white; margin-left: 10px; }
         .slider-container { position: relative; width: 100%; height: 250px; overflow: hidden; border-radius: 5px; margin-bottom: 10px; }
@@ -47,7 +48,7 @@
 
 <div class="bottom-nav">
     <button onclick="filterCat('')" style="background:none; border:none; color:white; font-size:24px;">🏠</button>
-    <button onclick="showFavorites()" style="background:none; border:none; color:#ff5a5f; font-size:26px; text-shadow: 1px 1px 2px rgba(0,0,0,0.5);">♥️</button>
+    <button onclick="showFavorites()" style="background:none; border:none; color:#ff5a5f; font-size:26px;">♥️</button>
     <button class="btn-add-center" onclick="showModal('form')">+</button>
     <button onclick="showMyChats()" style="background:none; border:none; color:white; font-size:24px;">💬</button>
     <button onclick="renderAds('my')" style="background:none; border:none; color:white; font-size:24px;">👤</button>
@@ -67,13 +68,11 @@
         <option value="Сельхозживотные">Сельхозживотные</option>
         <option value="Домашние питомцы">Домашние питомцы</option>
     </select>
-    <textarea id="desc" class="field" placeholder="Описание и возраст"></textarea>
-    <div style="margin-bottom:10px;">
-        <label for="photoInput" style="display:block; padding:10px; background:#e0e0e0; border-radius:5px; text-align:center; cursor:pointer;">📸 Выбрать фото</label>
-        <input type="file" id="photoInput" accept="image/*" multiple style="display:none" onchange="previewPhotos()">
-    </div>
-    <div id="previewArea" style="display:flex; gap:5px; margin-bottom:10px; overflow-x:auto;"></div>
-    <button id="saveBtn" class="action-btn btn-chat" onclick="saveAd()" style="width:100%">Опубликовать</button>
+    <textarea id="desc" class="field" placeholder="Описание"></textarea>
+    <label for="photoInput" style="display:block; padding:10px; background:#e0e0e0; border-radius:5px; text-align:center; cursor:pointer;">📸 Выбрать фото</label>
+    <input type="file" id="photoInput" accept="image/*" multiple style="display:none" onchange="previewPhotos()">
+    <div id="previewArea" style="display:flex; gap:5px; margin-top:10px; overflow-x:auto;"></div>
+    <button id="saveBtn" class="action-btn btn-chat" onclick="saveAd()" style="width:100%; margin-top:10px;">Опубликовать</button>
     <button onclick="hideModal('form')" style="width:100%; margin-top:10px; background:none; border:none; color:red;">Отмена</button>
 </div></div>
 
@@ -88,31 +87,25 @@
 
 <div id="myChatsModal" class="modal"><div class="content">
     <h3>Мои чаты</h3>
-    <div id="chatsList" style="max-height:300px; overflow-y:auto; margin-bottom:10px;"></div>
-    <button onclick="hideModal('myChatsModal')" style="width:100%; padding:10px; background:#002f34; color:white; border:none; border-radius:5px;">Закрыть</button>
+    <div id="chatsList" style="max-height:300px; overflow-y:auto;"></div>
+    <button onclick="hideModal('myChatsModal')" style="width:100%; padding:10px; margin-top:10px; background:#002f34; color:white; border:none; border-radius:5px;">Закрыть</button>
 </div></div>
 
 <div id="favModal" class="modal"><div class="content">
     <h3>Избранное</h3>
-    <div id="favList" style="max-height:300px; overflow-y:auto; margin-bottom:10px;"></div>
-    <button onclick="hideModal('favModal')" style="width:100%; padding:10px; background:#002f34; color:white; border:none; border-radius:5px;">Закрыть</button>
+    <div id="favList" style="max-height:300px; overflow-y:auto;"></div>
+    <button onclick="hideModal('favModal')" style="width:100%; padding:10px; margin-top:10px; background:#002f34; color:white; border:none; border-radius:5px;">Закрыть</button>
 </div></div>
 
 <script>
     const sb = supabase.createClient('https://qdesomzmhrghygzprftz.supabase.co', 'sb_publishable_ru6cRM3d9mYcDj7tjvAStQ_7rqIftg0');
     let ads = [], myFavs = [], activeAdId = null, slideIdx = 0, activeCat = '';
 
-    sb.channel('messages')
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, payload => {
-          if (activeAdId && payload.new.ad_id == activeAdId) openChat(activeAdId);
-      }).subscribe();
-
     async function load() {
         const { data } = await sb.from('ads').select('*');
         if (data) ads = data;
         updateMyFavs();
     }
-
     async function updateMyFavs() {
         const name = localStorage.getItem('myChatName');
         if (name) {
@@ -121,63 +114,30 @@
         }
         renderAds();
     }
-
     function filterCat(cat) { activeCat = cat; renderAds(); }
-
     function renderAds(mode) {
         const query = document.getElementById('searchInput').value.toLowerCase();
         let filtered = ads.filter(ad => (ad.title?.toLowerCase().includes(query) || ad.desc?.toLowerCase().includes(query)) && (activeCat === '' || ad.category === activeCat));
         if (mode === 'my') filtered = filtered.filter(ad => ad.phone === localStorage.getItem('myPhone'));
-        
-        document.getElementById('grid').innerHTML = filtered.map(ad => {
-            const isFav = myFavs.includes(ad.id);
-            return `
+        document.getElementById('grid').innerHTML = filtered.map(ad => `
             <div class="card">
                 <div onclick="openView('${ad.id}')">
                     <img src="${ad.images ? ad.images.split('|')[0] : ''}">
                     <b>${ad.title}</b><br><small>${ad.price} грн</small>
                 </div>
-                <button onclick="toggleFavorite('${ad.id}')" style="margin-top:5px; width:100%; border:none; background:#eee; border-radius:5px; cursor:pointer; color: ${isFav ? 'red' : 'gray'}">♥</button>
-            </div>`;
-        }).join('');
+                <button onclick="toggleFavorite('${ad.id}')" style="margin-top:5px; width:100%; border:none; background:#eee; border-radius:5px; cursor:pointer; color: ${myFavs.includes(ad.id) ? 'red' : 'gray'}">♥</button>
+            </div>`).join('');
     }
-
     async function toggleFavorite(adId) {
-        let name = localStorage.getItem('myChatName');
-        if (!name) { name = prompt("Введите ваше имя:"); if (!name) return; localStorage.setItem('myChatName', name); }
-        
+        let name = localStorage.getItem('myChatName') || prompt("Введите ваше имя:");
+        if (!name) return; localStorage.setItem('myChatName', name);
         const isFav = myFavs.includes(Number(adId));
         if (isFav) {
             const { data } = await sb.from('favorites').select('id').eq('ad_id', adId).eq('user_name', name);
-            if (data && data.length > 0) await sb.from('favorites').delete().eq('id', data[0].id);
-        } else {
-            await sb.from('favorites').insert([{ ad_id: Number(adId), user_name: name }]);
-        }
+            if (data?.length) await sb.from('favorites').delete().eq('id', data[0].id);
+        } else await sb.from('favorites').insert([{ ad_id: Number(adId), user_name: name }]);
         updateMyFavs();
     }
-
-    async function showFavorites() {
-        const name = localStorage.getItem('myChatName');
-        if (!name) { alert("Сначала укажите имя в чате!"); return; }
-        showModal('favModal');
-        const { data } = await sb.from('favorites').select('id, ad_id').eq('user_name', name);
-        const list = document.getElementById('favList');
-        
-        list.innerHTML = !data || data.length === 0 ? "Список пуст." : data.map(item => {
-            const ad = ads.find(a => a.id == item.ad_id);
-            return `<div style="display:flex; justify-content:space-between; align-items:center; padding:10px; border-bottom:1px solid #eee;">
-                <span onclick="openView('${item.ad_id}'); hideModal('favModal')" style="cursor:pointer; flex:1;">${ad ? ad.title : 'Объявление удалено'}</span>
-                <button onclick="removeFromFavorites('${item.id}')" style="background:#ff5a5f; color:white; border:none; padding:5px 10px; border-radius:5px; margin-left:10px; cursor:pointer;">✕</button>
-            </div>`;
-        }).join('');
-    }
-
-    async function removeFromFavorites(favId) {
-        const { error } = await sb.from('favorites').delete().eq('id', favId);
-        if (error) alert("Ошибка: " + error.message);
-        else { updateMyFavs(); showFavorites(); }
-    }
-
     function previewPhotos() {
         const input = document.getElementById('photoInput');
         const preview = document.getElementById('previewArea');
@@ -188,35 +148,22 @@
             reader.readAsDataURL(file);
         }
     }
-
     async function saveAd() {
-        const btn = document.getElementById('saveBtn');
-        btn.innerText = "Публикация..."; btn.disabled = true;
-        try {
-            const files = document.getElementById('photoInput').files;
-            let imgs = [];
-            for (let f of files) {
-                let b64 = await new Promise(r => { let reader = new FileReader(); reader.onload = () => r(reader.result); reader.readAsDataURL(f); });
-                imgs.push(b64);
-            }
-            const { error } = await sb.from('ads').insert([{ title: document.getElementById('title').value, city: document.getElementById('city').value, price: document.getElementById('price').value, breed: document.getElementById('breed').value, phone: document.getElementById('phone').value, desc: document.getElementById('desc').value, category: document.getElementById('category').value, images: imgs.join('|') }]);
-            if (error) throw error;
-            localStorage.setItem('myPhone', document.getElementById('phone').value);
-            alert("Успешно!"); location.reload();
-        } catch (e) { alert("Ошибка: " + e.message); btn.innerText = "Опубликовать"; btn.disabled = false; }
+        const btn = document.getElementById('saveBtn'); btn.disabled = true;
+        const files = document.getElementById('photoInput').files;
+        let imgs = [];
+        for (let f of files) {
+            let b64 = await new Promise(r => { let reader = new FileReader(); reader.onload = () => r(reader.result); reader.readAsDataURL(f); });
+            imgs.push(b64);
+        }
+        await sb.from('ads').insert([{ title: document.getElementById('title').value, phone: document.getElementById('phone').value, price: document.getElementById('price').value, desc: document.getElementById('desc').value, category: document.getElementById('category').value, images: imgs.join('|') }]);
+        location.reload();
     }
-
-    async function deleteAd(id) {
-        if (!confirm("Удалить объявление?")) return;
-        const { error } = await sb.from('ads').delete().eq('id', id);
-        if (error) alert("Ошибка: " + error.message);
-        else { alert("Удалено"); hideModal('viewModal'); await load(); }
-    }
-
+    function showModal(id) { document.getElementById(id).style.display = 'flex'; }
+    function hideModal(id) { document.getElementById(id).style.display = 'none'; }
     function openView(id) {
         const ad = ads.find(a => a.id == id);
         const imgs = ad.images ? ad.images.split('|') : [];
-        const myPhone = localStorage.getItem('myPhone');
         slideIdx = 0;
         document.getElementById('viewContent').innerHTML = `
             <h2>${ad.title}</h2>
@@ -224,58 +171,45 @@
                 ${imgs.map((i, idx) => `<img src="${i}" class="slider-img ${idx === 0 ? 'active' : ''}">`).join('')}
                 ${imgs.length > 1 ? `<button class="nav-btn" style="left:0" onclick="moveSlide(-1)">❮</button><button class="nav-btn" style="right:0" onclick="moveSlide(1)">❯</button>` : ''}
             </div>
-            <p><b>Категория:</b> ${ad.category}</p><p><b>Город:</b> ${ad.city}</p><p><b>Порода:</b> ${ad.breed}</p><p><b>Описание:</b> ${ad.desc}</p>
+            <p>Цена: ${ad.price} грн</p><p>Описание: ${ad.desc}</p>
             <div style="display:flex; margin-top:20px;">
                 <button class="action-btn btn-chat" onclick="openChat('${ad.id}')">Написать</button>
                 <a href="tel:${ad.phone}" class="action-btn btn-call">Позвонить</a>
             </div>
-            ${ad.phone === myPhone ? `<button class="action-btn" onclick="deleteAd('${ad.id}')" style="width:100%; margin-top:10px; background:#ff5a5f; color:white;">Удалить</button>` : ''}
             <button onclick="hideModal('viewModal')" style="width:100%; margin-top:10px; background:none; border:none; color:gray;">Закрыть</button>`;
         showModal('viewModal');
     }
-
     function moveSlide(n) {
         const s = document.querySelectorAll('.slider-img');
         if(s.length > 0) { s[slideIdx].classList.remove('active'); slideIdx = (slideIdx + n + s.length) % s.length; s[slideIdx].classList.add('active'); }
     }
-
     async function openChat(id) {
-        activeAdId = id; hideModal('viewModal'); hideModal('myChatsModal'); hideModal('favModal'); showModal('chatModal');
+        activeAdId = id; hideModal('viewModal'); showModal('chatModal');
         const { data } = await sb.from('messages').select('*').eq('ad_id', id).order('created_at', { ascending: true });
-        const msgDiv = document.getElementById('messages');
-        msgDiv.innerHTML = data?.map(m => `<div style="margin-bottom:5px; padding:5px; background:#f1f1f1; border-radius:5px;"><b>${m.sender}:</b> ${m.text}</div>`).join('') || 'Нет сообщений';
-        msgDiv.scrollTop = msgDiv.scrollHeight;
+        document.getElementById('messages').innerHTML = data?.map(m => `<div><b>${m.sender}:</b> ${m.text}</div>`).join('') || 'Нет сообщений';
     }
-
     async function sendMsg() {
-        let name = localStorage.getItem('myChatName');
-        if (!name) { name = prompt("Введите ваше имя:"); if (!name) return; localStorage.setItem('myChatName', name); }
         const text = document.getElementById('msgText').value;
         if (!text) return;
-        const { error } = await sb.from('messages').insert([{ ad_id: activeAdId, sender: name, text: text }]);
-        if (!error) {
-            document.getElementById('msgText').value = '';
-            await openChat(activeAdId);
-        } else {
-            alert("Ошибка: " + error.message);
-        }
+        await sb.from('messages').insert([{ ad_id: activeAdId, sender: localStorage.getItem('myChatName'), text: text }]);
+        document.getElementById('msgText').value = ''; openChat(activeAdId);
     }
-
     async function showMyChats() {
-        const myName = localStorage.getItem('myChatName');
-        if (!myName) { const name = prompt("Введите ваше имя:"); if (!name) return; localStorage.setItem('myChatName', name); }
         showModal('myChatsModal');
         const { data } = await sb.from('messages').select('ad_id').eq('sender', localStorage.getItem('myChatName'));
-        const uniqueAds = [...new Set(data?.map(m => m.ad_id) || [])];
         const list = document.getElementById('chatsList');
-        list.innerHTML = uniqueAds.length === 0 ? "Нет активных чатов." : uniqueAds.map(id => {
+        list.innerHTML = [...new Set(data?.map(m => m.ad_id) || [])].map(id => {
             const ad = ads.find(a => a.id == id);
-            return `<div style="padding:10px; border-bottom:1px solid #eee; cursor:pointer;" onclick="openChat('${id}')"><b>${ad ? ad.title : 'Объявление удалено'}</b></div>`;
-        }).join('');
+            return `<div style="padding:10px; border-bottom:1px solid #eee;" onclick="openChat('${id}')"><b>${ad ? ad.title : 'Удалено'}</b></div>`;
+        }).join('') || 'Нет чатов';
     }
-
-    function showModal(id) { document.getElementById(id).style.display = 'flex'; }
-    function hideModal(id) { document.getElementById(id).style.display = 'none'; }
+    async function showFavorites() {
+        showModal('favModal');
+        document.getElementById('favList').innerHTML = myFavs.map(id => {
+            const ad = ads.find(a => a.id == id);
+            return `<div style="padding:10px; border-bottom:1px solid #eee;">${ad ? ad.title : 'Удалено'}</div>`;
+        }).join('') || 'Список пуст';
+    }
     load();
 </script>
 </body>
