@@ -44,7 +44,7 @@
     <div class="cat-btn" onclick="filterCat('Домашние питомцы')">Питомцы</div>
 </div>
 
-<div class="grid" id="grid"><p style="padding:20px; text-align:center;">Загрузка...</p></div>
+<div class="grid" id="grid"></div>
 
 <div class="bottom-nav">
     <button onclick="resetApp()" style="background:none; border:none; color:white; font-size:24px;">🏠</button>
@@ -54,7 +54,6 @@
     <button onclick="manageMyAds()" style="background:none; border:none; color:white; font-size:24px;">👤</button>
 </div>
 
-<!-- Модальные окна (остались прежними) -->
 <div id="form" class="modal"><div class="content">
     <h2>Новое объявление</h2>
     <input id="title" class="field" placeholder="Название">
@@ -84,16 +83,15 @@
 
 <script>
     const sb = supabase.createClient('https://qdesomzmhrghygzprftz.supabase.co', 'sb_publishable_ru6cRM3d9mYcDj7tjvAStQ_7rqIftg0');
-    let ads = [], myFavs = [], activeAdId = null, slideIdx = 0, activeCat = '', isMyMode = false;
+    let ads = JSON.parse(localStorage.getItem('cached_ads') || '[]');
+    let myFavs = [], activeAdId = null, slideIdx = 0, activeCat = '', isMyMode = false;
 
-    // ОПТИМИЗАЦИЯ: Загружаем только необходимые поля и сортируем на сервере
     async function loadData() {
-        const { data } = await sb.from('ads').select('id, title, price, category, images, desc, phone, city').order('id', { ascending: false });
+        const { data } = await sb.from('ads').select('*').order('id', { ascending: false });
         if (data) {
             ads = data;
+            localStorage.setItem('cached_ads', JSON.stringify(data));
             renderAds();
-        } else {
-            document.getElementById('grid').innerHTML = '<p style="text-align:center;">Ошибка загрузки</p>';
         }
         updateMyFavs();
     }
@@ -103,12 +101,10 @@
     function renderAds() {
         const query = document.getElementById('searchInput').value.toLowerCase();
         let filtered = ads.filter(ad => (ad.title?.toLowerCase().includes(query) || ad.desc?.toLowerCase().includes(query)) && (activeCat === '' || ad.category === activeCat));
-        
         if (isMyMode) {
             const myPhone = localStorage.getItem('myPhone');
             filtered = filtered.filter(ad => String(ad.phone).trim() === String(myPhone).trim());
         }
-
         document.getElementById('grid').innerHTML = filtered.map(ad => `
             <div class="card">
                 <div onclick="openView('${ad.id}')">
@@ -120,7 +116,6 @@
             </div>`).join('');
     }
 
-    // Остальной функционал без изменений
     async function deleteAd(adId) {
         if (!confirm("Удалить?")) return;
         await sb.from('ads').delete().eq('id', adId);
@@ -129,11 +124,9 @@
     }
 
     function manageMyAds() {
-        if (!localStorage.getItem('myPhone')) {
-            const phone = prompt("Введите ваш номер телефона:");
-            if (!phone) return;
-            localStorage.setItem('myPhone', phone);
-        }
+        const phone = localStorage.getItem('myPhone') || prompt("Введите ваш номер телефона:");
+        if (!phone) return;
+        localStorage.setItem('myPhone', phone);
         isMyMode = true; renderAds();
     }
 
@@ -240,6 +233,9 @@
             return `<div style="padding:10px; border-bottom:1px solid #eee;">${ad ? ad.title : 'Удалено'}</div>`;
         }).join('') || 'Список пуст';
     }
+    
+    // Запуск
+    renderAds();
     loadData();
 </script>
 </body>
