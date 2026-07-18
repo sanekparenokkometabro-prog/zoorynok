@@ -51,7 +51,7 @@
     <button onclick="showFavorites()" style="background:none; border:none; color:#ff5a5f; font-size:26px;">♥️</button>
     <button class="btn-add-center" onclick="showModal('form')">+</button>
     <button onclick="showMyChats()" style="background:none; border:none; color:white; font-size:24px;">💬</button>
-    <button onclick="renderAds('my')" style="background:none; border:none; color:white; font-size:24px;">👤</button>
+    <button onclick="askPhoneAndRender()" style="background:none; border:none; color:white; font-size:24px;">👤</button>
 </div>
 
 <!-- Модальные окна -->
@@ -106,6 +106,12 @@
         if (data) ads = data;
         updateMyFavs();
     }
+    
+    function askPhoneAndRender() {
+        const phone = prompt("Введите ваш номер телефона для входа в кабинет:");
+        if (phone) { localStorage.setItem('myPhone', phone); renderAds('my'); }
+    }
+
     async function updateMyFavs() {
         const name = localStorage.getItem('myChatName');
         if (name) {
@@ -115,10 +121,12 @@
         renderAds();
     }
     function filterCat(cat) { activeCat = cat; renderAds(); }
+
     function renderAds(mode) {
         const query = document.getElementById('searchInput').value.toLowerCase();
         let filtered = ads.filter(ad => (ad.title?.toLowerCase().includes(query) || ad.desc?.toLowerCase().includes(query)) && (activeCat === '' || ad.category === activeCat));
         if (mode === 'my') filtered = filtered.filter(ad => ad.phone === localStorage.getItem('myPhone'));
+        
         document.getElementById('grid').innerHTML = filtered.map(ad => `
             <div class="card">
                 <div onclick="openView('${ad.id}')">
@@ -126,8 +134,17 @@
                     <b>${ad.title}</b><br><small>${ad.price} грн</small>
                 </div>
                 <button onclick="toggleFavorite('${ad.id}')" style="margin-top:5px; width:100%; border:none; background:#eee; border-radius:5px; cursor:pointer; color: ${myFavs.includes(ad.id) ? 'red' : 'gray'}">♥</button>
+                ${mode === 'my' ? `<button onclick="deleteAd('${ad.id}')" style="margin-top:5px; width:100%; border:none; background:#ffeded; border-radius:5px; cursor:pointer; color:red;">Удалить</button>` : ''}
             </div>`).join('');
     }
+
+    async function deleteAd(adId) {
+        if (!confirm("Удалить это объявление?")) return;
+        const { error } = await sb.from('ads').delete().eq('id', adId);
+        if (error) alert("Ошибка: " + error.message);
+        else location.reload();
+    }
+
     async function toggleFavorite(adId) {
         let name = localStorage.getItem('myChatName') || prompt("Введите ваше имя:");
         if (!name) return; localStorage.setItem('myChatName', name);
@@ -138,6 +155,7 @@
         } else await sb.from('favorites').insert([{ ad_id: Number(adId), user_name: name }]);
         updateMyFavs();
     }
+
     function previewPhotos() {
         const input = document.getElementById('photoInput');
         const preview = document.getElementById('previewArea');
@@ -148,40 +166,24 @@
             reader.readAsDataURL(file);
         }
     }
-    
-    // ИСПРАВЛЕННАЯ ФУНКЦИЯ СОХРАНЕНИЯ: теперь отправляет все поля
+
     async function saveAd() {
-        const btn = document.getElementById('saveBtn'); 
-        btn.disabled = true;
-        
+        const btn = document.getElementById('saveBtn'); btn.disabled = true;
         const files = document.getElementById('photoInput').files;
         let imgs = [];
         for (let f of files) {
             let b64 = await new Promise(r => { let reader = new FileReader(); reader.onload = () => r(reader.result); reader.readAsDataURL(f); });
             imgs.push(b64);
         }
-
         const adData = { 
-            title: document.getElementById('title').value, 
-            phone: document.getElementById('phone').value, 
-            price: document.getElementById('price').value, 
-            desc: document.getElementById('desc').value, 
-            category: document.getElementById('category').value, 
-            images: imgs.join('|'),
-            breed: document.getElementById('breed').value, // Исправлено: добавлено поле породы
-            city: document.getElementById('city').value    // Исправлено: добавлено поле города
+            title: document.getElementById('title').value, phone: document.getElementById('phone').value, 
+            price: document.getElementById('price').value, desc: document.getElementById('desc').value, 
+            category: document.getElementById('category').value, images: imgs.join('|'),
+            breed: document.getElementById('breed').value, city: document.getElementById('city').value 
         };
-
-        const { data, error } = await sb.from('ads').insert([adData]);
-        
-        if (error) {
-            alert("Ошибка сохранения: " + error.message);
-            console.error(error);
-            btn.disabled = false;
-        } else {
-            alert("Объявление успешно создано!");
-            location.reload();
-        }
+        const { error } = await sb.from('ads').insert([adData]);
+        if (error) { alert("Ошибка: " + error.message); btn.disabled = false; }
+        else { alert("Успешно!"); location.reload(); }
     }
 
     function showModal(id) { document.getElementById(id).style.display = 'flex'; }
@@ -189,24 +191,14 @@
     function openView(id) {
         const ad = ads.find(a => a.id == id);
         const imgs = ad.images ? ad.images.split('|') : [];
-        slideIdx = 0;
         document.getElementById('viewContent').innerHTML = `
             <h2>${ad.title}</h2>
-            <div class="slider-container">
-                ${imgs.map((i, idx) => `<img src="${i}" class="slider-img ${idx === 0 ? 'active' : ''}">`).join('')}
-                ${imgs.length > 1 ? `<button class="nav-btn" style="left:0" onclick="moveSlide(-1)">❮</button><button class="nav-btn" style="right:0" onclick="moveSlide(1)">❯</button>` : ''}
-            </div>
-            <p>Цена: ${ad.price} грн</p><p>Порода: ${ad.breed || 'Не указана'}</p><p>Город: ${ad.city || 'Не указан'}</p><p>Описание: ${ad.desc}</p>
-            <div style="display:flex; margin-top:20px;">
-                <button class="action-btn btn-chat" onclick="openChat('${ad.id}')">Написать</button>
-                <a href="tel:${ad.phone}" class="action-btn btn-call">Позвонить</a>
-            </div>
-            <button onclick="hideModal('viewModal')" style="width:100%; margin-top:10px; background:none; border:none; color:gray;">Закрыть</button>`;
+            <p>Цена: ${ad.price} грн</p><p>Порода: ${ad.breed || '-'}</p><p>Город: ${ad.city || '-'}</p>
+            <p>Описание: ${ad.desc}</p>
+            <button class="action-btn btn-chat" onclick="openChat('${ad.id}')">Написать</button>
+            <a href="tel:${ad.phone}" class="action-btn btn-call" style="text-decoration:none;">Позвонить</a>
+            <button onclick="hideModal('viewModal')" style="width:100%; margin-top:10px; border:none; background:none;">Закрыть</button>`;
         showModal('viewModal');
-    }
-    function moveSlide(n) {
-        const s = document.querySelectorAll('.slider-img');
-        if(s.length > 0) { s[slideIdx].classList.remove('active'); slideIdx = (slideIdx + n + s.length) % s.length; s[slideIdx].classList.add('active'); }
     }
     async function openChat(id) {
         activeAdId = id; hideModal('viewModal'); showModal('chatModal');
@@ -222,8 +214,7 @@
     async function showMyChats() {
         showModal('myChatsModal');
         const { data } = await sb.from('messages').select('ad_id').eq('sender', localStorage.getItem('myChatName'));
-        const list = document.getElementById('chatsList');
-        list.innerHTML = [...new Set(data?.map(m => m.ad_id) || [])].map(id => {
+        document.getElementById('chatsList').innerHTML = [...new Set(data?.map(m => m.ad_id) || [])].map(id => {
             const ad = ads.find(a => a.id == id);
             return `<div style="padding:10px; border-bottom:1px solid #eee;" onclick="openChat('${id}')"><b>${ad ? ad.title : 'Удалено'}</b></div>`;
         }).join('') || 'Нет чатов';
