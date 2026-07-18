@@ -87,10 +87,18 @@
     let ads = JSON.parse(localStorage.getItem('cached_ads') || '[]');
     let myFavs = [], activeAdId = null, slideIdx = 0, activeCat = '', isMyMode = false;
 
-    // Сразу при запуске отображаем кэш, потом скачиваем свежее
-    renderAds();
-    loadData();
-    updateMyFavs();
+    // Авто-инициализация
+    initApp();
+
+    async function initApp() {
+        if (ads.length === 0) {
+            await loadData();
+        } else {
+            renderAds();
+            loadData(); // Фоновое обновление
+        }
+        updateMyFavs();
+    }
 
     async function loadData() {
         const { data } = await sb.from('ads').select('*').order('id', { ascending: false });
