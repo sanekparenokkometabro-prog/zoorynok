@@ -108,25 +108,19 @@
     }
     
     function askPhoneAndRender() {
-        const phone = prompt("Введите ваш номер телефона для входа в кабинет:");
+        const phone = prompt("Введите ваш номер (как при создании объявления):");
         if (phone) { localStorage.setItem('myPhone', phone); renderAds('my'); }
     }
-
-    async function updateMyFavs() {
-        const name = localStorage.getItem('myChatName');
-        if (name) {
-            const { data } = await sb.from('favorites').select('ad_id').eq('user_name', name);
-            myFavs = data?.map(f => f.ad_id) || [];
-        }
-        renderAds();
-    }
-    function filterCat(cat) { activeCat = cat; renderAds(); }
 
     function renderAds(mode) {
         const query = document.getElementById('searchInput').value.toLowerCase();
         let filtered = ads.filter(ad => (ad.title?.toLowerCase().includes(query) || ad.desc?.toLowerCase().includes(query)) && (activeCat === '' || ad.category === activeCat));
-        if (mode === 'my') filtered = filtered.filter(ad => ad.phone === localStorage.getItem('myPhone'));
         
+        if (mode === 'my') {
+            const myPhone = localStorage.getItem('myPhone');
+            filtered = filtered.filter(ad => ad.phone === myPhone);
+        }
+
         document.getElementById('grid').innerHTML = filtered.map(ad => `
             <div class="card">
                 <div onclick="openView('${ad.id}')">
@@ -139,11 +133,21 @@
     }
 
     async function deleteAd(adId) {
-        if (!confirm("Удалить это объявление?")) return;
+        if (!confirm("Удалить объявление?")) return;
         const { error } = await sb.from('ads').delete().eq('id', adId);
         if (error) alert("Ошибка: " + error.message);
         else location.reload();
     }
+
+    async function updateMyFavs() {
+        const name = localStorage.getItem('myChatName');
+        if (name) {
+            const { data } = await sb.from('favorites').select('ad_id').eq('user_name', name);
+            myFavs = data?.map(f => f.ad_id) || [];
+        }
+        renderAds();
+    }
+    function filterCat(cat) { activeCat = cat; renderAds(); }
 
     async function toggleFavorite(adId) {
         let name = localStorage.getItem('myChatName') || prompt("Введите ваше имя:");
