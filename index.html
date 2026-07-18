@@ -87,16 +87,14 @@
     let ads = JSON.parse(localStorage.getItem('cached_ads') || '[]');
     let myFavs = [], activeAdId = null, slideIdx = 0, activeCat = '', isMyMode = false;
 
-    // Авто-инициализация
-    initApp();
+    // Гарантированный запуск при открытии страницы
+    document.addEventListener('DOMContentLoaded', () => {
+        initApp();
+    });
 
     async function initApp() {
-        if (ads.length === 0) {
-            await loadData();
-        } else {
-            renderAds();
-            loadData(); // Фоновое обновление
-        }
+        renderAds();
+        await loadData();
         updateMyFavs();
     }
 
