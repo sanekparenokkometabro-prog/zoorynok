@@ -47,11 +47,11 @@
 <div class="grid" id="grid"></div>
 
 <div class="bottom-nav">
-    <button onclick="filterCat('')" style="background:none; border:none; color:white; font-size:24px;">🏠</button>
+    <button onclick="window.location.reload()" style="background:none; border:none; color:white; font-size:24px;">🏠</button>
     <button onclick="showFavorites()" style="background:none; border:none; color:#ff5a5f; font-size:26px;">♥️</button>
     <button class="btn-add-center" onclick="showModal('form')">+</button>
     <button onclick="showMyChats()" style="background:none; border:none; color:white; font-size:24px;">💬</button>
-    <button onclick="askPhoneAndRender()" style="background:none; border:none; color:white; font-size:24px;">👤</button>
+    <button onclick="manageMyAds()" style="background:none; border:none; color:white; font-size:24px;">👤</button>
 </div>
 
 <!-- Модальные окна -->
@@ -61,7 +61,7 @@
     <input id="city" class="field" placeholder="Город">
     <input id="price" class="field" type="number" placeholder="Цена">
     <input id="breed" class="field" placeholder="Порода">
-    <input id="phone" class="field" type="tel" placeholder="Ваш номер">
+    <input id="phone" class="field" type="tel" placeholder="Ваш номер (важно для удаления)">
     <select id="category" class="field">
         <option value="Веттовары">Веттовары</option>
         <option value="Комбикорма">Комбикорма</option>
@@ -105,11 +105,17 @@
         const { data } = await sb.from('ads').select('*');
         if (data) ads = data;
         updateMyFavs();
+        renderAds();
     }
     
-    function askPhoneAndRender() {
-        const phone = prompt("Введите ваш номер (как при создании объявления):");
-        if (phone) { localStorage.setItem('myPhone', phone); renderAds('my'); }
+    function manageMyAds() {
+        let phone = localStorage.getItem('myPhone');
+        if (!phone) {
+            phone = prompt("Введите ваш номер телефона (для входа в кабинет):");
+            if (phone) localStorage.setItem('myPhone', phone);
+            else return;
+        }
+        renderAds('my');
     }
 
     function renderAds(mode) {
@@ -133,10 +139,10 @@
     }
 
     async function deleteAd(adId) {
-        if (!confirm("Удалить объявление?")) return;
+        if (!confirm("Удалить это объявление?")) return;
         const { error } = await sb.from('ads').delete().eq('id', adId);
         if (error) alert("Ошибка: " + error.message);
-        else location.reload();
+        else { alert("Удалено"); location.reload(); }
     }
 
     async function updateMyFavs() {
