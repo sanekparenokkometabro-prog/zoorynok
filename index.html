@@ -188,11 +188,17 @@
 
     function showModal(id) { document.getElementById(id).style.display = 'flex'; }
     function hideModal(id) { document.getElementById(id).style.display = 'none'; }
+    
     function openView(id) {
         const ad = ads.find(a => a.id == id);
         const imgs = ad.images ? ad.images.split('|') : [];
+        slideIdx = 0;
         document.getElementById('viewContent').innerHTML = `
             <h2>${ad.title}</h2>
+            <div class="slider-container">
+                ${imgs.map((i, idx) => `<img src="${i}" class="slider-img ${idx === 0 ? 'active' : ''}">`).join('')}
+                ${imgs.length > 1 ? `<button class="nav-btn" style="left:0" onclick="moveSlide(-1)">❮</button><button class="nav-btn" style="right:0" onclick="moveSlide(1)">❯</button>` : ''}
+            </div>
             <p>Цена: ${ad.price} грн</p><p>Порода: ${ad.breed || '-'}</p><p>Город: ${ad.city || '-'}</p>
             <p>Описание: ${ad.desc}</p>
             <button class="action-btn btn-chat" onclick="openChat('${ad.id}')">Написать</button>
@@ -200,6 +206,12 @@
             <button onclick="hideModal('viewModal')" style="width:100%; margin-top:10px; border:none; background:none;">Закрыть</button>`;
         showModal('viewModal');
     }
+    
+    function moveSlide(n) {
+        const s = document.querySelectorAll('.slider-img');
+        if(s.length > 0) { s[slideIdx].classList.remove('active'); slideIdx = (slideIdx + n + s.length) % s.length; s[slideIdx].classList.add('active'); }
+    }
+
     async function openChat(id) {
         activeAdId = id; hideModal('viewModal'); showModal('chatModal');
         const { data } = await sb.from('messages').select('*').eq('ad_id', id).order('created_at', { ascending: true });
