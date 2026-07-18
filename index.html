@@ -47,7 +47,7 @@
 <div class="grid" id="grid"></div>
 
 <div class="bottom-nav">
-    <button onclick="window.location.reload()" style="background:none; border:none; color:white; font-size:24px;">🏠</button>
+    <button onclick="location.reload()" style="background:none; border:none; color:white; font-size:24px;">🏠</button>
     <button onclick="showFavorites()" style="background:none; border:none; color:#ff5a5f; font-size:26px;">♥️</button>
     <button class="btn-add-center" onclick="showModal('form')">+</button>
     <button onclick="showMyChats()" style="background:none; border:none; color:white; font-size:24px;">💬</button>
@@ -99,7 +99,7 @@
 
 <script>
     const sb = supabase.createClient('https://qdesomzmhrghygzprftz.supabase.co', 'sb_publishable_ru6cRM3d9mYcDj7tjvAStQ_7rqIftg0');
-    let ads = [], myFavs = [], activeAdId = null, slideIdx = 0, activeCat = '';
+    let ads = [], myFavs = [], activeAdId = null, slideIdx = 0, activeCat = '', isMyAdsMode = false;
 
     async function load() {
         const { data } = await sb.from('ads').select('*');
@@ -111,20 +111,22 @@
     function manageMyAds() {
         let phone = localStorage.getItem('myPhone');
         if (!phone) {
-            phone = prompt("Введите ваш номер телефона (для входа в кабинет):");
+            phone = prompt("Введите ваш номер телефона:");
             if (phone) localStorage.setItem('myPhone', phone);
             else return;
         }
-        renderAds('my');
+        isMyAdsMode = true;
+        renderAds();
     }
 
-    function renderAds(mode) {
+    function renderAds() {
         const query = document.getElementById('searchInput').value.toLowerCase();
+        const myPhone = localStorage.getItem('myPhone');
+        
         let filtered = ads.filter(ad => (ad.title?.toLowerCase().includes(query) || ad.desc?.toLowerCase().includes(query)) && (activeCat === '' || ad.category === activeCat));
         
-        if (mode === 'my') {
-            const myPhone = localStorage.getItem('myPhone');
-            filtered = filtered.filter(ad => ad.phone === myPhone);
+        if (isMyAdsMode && myPhone) {
+            filtered = filtered.filter(ad => String(ad.phone).trim() === String(myPhone).trim());
         }
 
         document.getElementById('grid').innerHTML = filtered.map(ad => `
@@ -134,7 +136,7 @@
                     <b>${ad.title}</b><br><small>${ad.price} грн</small>
                 </div>
                 <button onclick="toggleFavorite('${ad.id}')" style="margin-top:5px; width:100%; border:none; background:#eee; border-radius:5px; cursor:pointer; color: ${myFavs.includes(ad.id) ? 'red' : 'gray'}">♥</button>
-                ${mode === 'my' ? `<button onclick="deleteAd('${ad.id}')" style="margin-top:5px; width:100%; border:none; background:#ffeded; border-radius:5px; cursor:pointer; color:red;">Удалить</button>` : ''}
+                ${isMyAdsMode ? `<button onclick="deleteAd('${ad.id}')" style="margin-top:5px; width:100%; border:none; background:#ffeded; border-radius:5px; cursor:pointer; color:red;">Удалить</button>` : ''}
             </div>`).join('');
     }
 
@@ -142,7 +144,7 @@
         if (!confirm("Удалить это объявление?")) return;
         const { error } = await sb.from('ads').delete().eq('id', adId);
         if (error) alert("Ошибка: " + error.message);
-        else { alert("Удалено"); location.reload(); }
+        else { alert("Удалено"); load(); }
     }
 
     async function updateMyFavs() {
@@ -153,7 +155,7 @@
         }
         renderAds();
     }
-    function filterCat(cat) { activeCat = cat; renderAds(); }
+    function filterCat(cat) { activeCat = cat; isMyAdsMode = false; renderAds(); }
 
     async function toggleFavorite(adId) {
         let name = localStorage.getItem('myChatName') || prompt("Введите ваше имя:");
@@ -179,6 +181,9 @@
 
     async function saveAd() {
         const btn = document.getElementById('saveBtn'); btn.disabled = true;
+        const phone = document.getElementById('phone').value;
+        localStorage.setItem('myPhone', phone);
+        
         const files = document.getElementById('photoInput').files;
         let imgs = [];
         for (let f of files) {
@@ -186,14 +191,14 @@
             imgs.push(b64);
         }
         const adData = { 
-            title: document.getElementById('title').value, phone: document.getElementById('phone').value, 
+            title: document.getElementById('title').value, phone: phone, 
             price: document.getElementById('price').value, desc: document.getElementById('desc').value, 
             category: document.getElementById('category').value, images: imgs.join('|'),
             breed: document.getElementById('breed').value, city: document.getElementById('city').value 
         };
         const { error } = await sb.from('ads').insert([adData]);
         if (error) { alert("Ошибка: " + error.message); btn.disabled = false; }
-        else { alert("Успешно!"); location.reload(); }
+        else { alert("Успешно!"); hideModal('form'); load(); }
     }
 
     function showModal(id) { document.getElementById(id).style.display = 'flex'; }
