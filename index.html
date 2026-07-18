@@ -148,17 +148,40 @@
             reader.readAsDataURL(file);
         }
     }
+    
+    // ИСПРАВЛЕННАЯ ФУНКЦИЯ СОХРАНЕНИЯ С ОТЛАДКОЙ
     async function saveAd() {
-        const btn = document.getElementById('saveBtn'); btn.disabled = true;
+        const btn = document.getElementById('saveBtn'); 
+        btn.disabled = true;
+        
         const files = document.getElementById('photoInput').files;
         let imgs = [];
         for (let f of files) {
             let b64 = await new Promise(r => { let reader = new FileReader(); reader.onload = () => r(reader.result); reader.readAsDataURL(f); });
             imgs.push(b64);
         }
-        await sb.from('ads').insert([{ title: document.getElementById('title').value, phone: document.getElementById('phone').value, price: document.getElementById('price').value, desc: document.getElementById('desc').value, category: document.getElementById('category').value, images: imgs.join('|') }]);
-        location.reload();
+
+        const adData = { 
+            title: document.getElementById('title').value, 
+            phone: document.getElementById('phone').value, 
+            price: document.getElementById('price').value, 
+            desc: document.getElementById('desc').value, 
+            category: document.getElementById('category').value, 
+            images: imgs.join('|') 
+        };
+
+        const { data, error } = await sb.from('ads').insert([adData]);
+        
+        if (error) {
+            alert("Ошибка сохранения: " + error.message);
+            console.error(error);
+            btn.disabled = false;
+        } else {
+            alert("Объявление успешно создано!");
+            location.reload();
+        }
     }
+
     function showModal(id) { document.getElementById(id).style.display = 'flex'; }
     function hideModal(id) { document.getElementById(id).style.display = 'none'; }
     function openView(id) {
