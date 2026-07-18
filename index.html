@@ -37,14 +37,14 @@
     <input type="text" id="searchInput" class="search-input" placeholder="Поиск..." oninput="renderAds()">
 </div>
 <div class="categories">
-    <div class="cat-btn" onclick="filterCat('')">Все</div>
+    <div class="cat-btn" onclick="resetApp()">Все</div>
     <div class="cat-btn" onclick="filterCat('Веттовары')">Веттовары</div>
     <div class="cat-btn" onclick="filterCat('Комбикорма')">Комбикорма</div>
     <div class="cat-btn" onclick="filterCat('Сельхозживотные')">Сельхозживотные</div>
     <div class="cat-btn" onclick="filterCat('Домашние питомцы')">Питомцы</div>
 </div>
 
-<div class="grid" id="grid"><p style="padding:20px; text-align:center;">Загрузка данных...</p></div>
+<div class="grid" id="grid"><p style="padding:20px; text-align:center;">Загрузка...</p></div>
 
 <div class="bottom-nav">
     <button onclick="resetApp()" style="background:none; border:none; color:white; font-size:24px;">🏠</button>
@@ -54,7 +54,6 @@
     <button onclick="manageMyAds()" style="background:none; border:none; color:white; font-size:24px;">👤</button>
 </div>
 
-<!-- Модальные окна -->
 <div id="form" class="modal"><div class="content">
     <h2>Новое объявление</h2>
     <input id="title" class="field" placeholder="Название">
@@ -85,27 +84,22 @@
 <script>
     const sb = supabase.createClient('https://qdesomzmhrghygzprftz.supabase.co', 'sb_publishable_ru6cRM3d9mYcDj7tjvAStQ_7rqIftg0');
     
-    // Инициализация при старте
     let ads = JSON.parse(localStorage.getItem('cached_ads') || '[]');
     let myFavs = [], activeAdId = null, slideIdx = 0, activeCat = '', isMyMode = false;
 
-    // Сразу при запуске пытаемся отобразить то, что есть в памяти
+    // Сразу при запуске отображаем кэш, потом скачиваем свежее
     renderAds();
+    loadData();
+    updateMyFavs();
 
-    // Функция загрузки данных
     async function loadData() {
         const { data } = await sb.from('ads').select('*').order('id', { ascending: false });
         if (data) {
             ads = data;
             localStorage.setItem('cached_ads', JSON.stringify(data));
-            renderAds(); // Перерисовываем с новыми данными
+            renderAds();
         }
     }
-    
-    // Принудительный вызов загрузки
-    loadData();
-
-    function resetApp() { isMyMode = false; activeCat = ''; document.getElementById('searchInput').value = ''; renderAds(); }
 
     function renderAds() {
         const grid = document.getElementById('grid');
@@ -118,7 +112,7 @@
         }
 
         if (filtered.length === 0) {
-            grid.innerHTML = '<p style="padding:20px; text-align:center;">Нет объявлений</p>';
+            grid.innerHTML = '<p style="padding:20px; text-align:center;">Объявлений пока нет</p>';
             return;
         }
 
@@ -132,6 +126,9 @@
                 ${isMyMode ? `<button onclick="deleteAd('${ad.id}')" style="margin-top:5px; width:100%; border:none; background:#ffeded; color:red;">Удалить</button>` : ''}
             </div>`).join('');
     }
+
+    function resetApp() { isMyMode = false; activeCat = ''; document.getElementById('searchInput').value = ''; renderAds(); }
+    function filterCat(cat) { activeCat = cat; isMyMode = false; renderAds(); }
 
     async function deleteAd(adId) {
         if (!confirm("Удалить?")) return;
@@ -155,8 +152,6 @@
             renderAds();
         }
     }
-
-    function filterCat(cat) { activeCat = cat; isMyMode = false; renderAds(); }
 
     async function toggleFavorite(adId) {
         let name = localStorage.getItem('myChatName') || prompt("Введите ваше имя:");
@@ -250,9 +245,6 @@
             return `<div style="padding:10px; border-bottom:1px solid #eee;">${ad ? ad.title : 'Удалено'}</div>`;
         }).join('') || 'Список пуст';
     }
-    
-    // Повторная загрузка избранного при старте
-    updateMyFavs();
 </script>
 </body>
 </html>
