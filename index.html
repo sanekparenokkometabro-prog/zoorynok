@@ -364,20 +364,6 @@
         box.scrollTop = box.scrollHeight;
     }
 
-    async function sendMsg() {
-        const text = document.getElementById('msgText').value.trim();
-        if (!text) return;
-        let name = localStorage.getItem('myChatName');
-        if (!name) {
-            name = prompt("Введите ваше имя для отображения в чате:");
-            if (!name) return;
-            localStorage.setItem('myChatName', name);
-        }
-        await sb.from('messages').insert([{ ad_id: activeAdId, sender: name, text: text }]);
-        document.getElementById('msgText').value = ''; 
-        openChat(activeAdId);
-    }
-
     async function showMyChats() {
         showModal('myChatsModal');
         let name = localStorage.getItem('myChatName');
@@ -409,19 +395,33 @@
             </div>`;
         }).join('');
     }
-</script>
 
-<!-- ПРИЩЕПЛЕННЫЙ МОДУЛЬ ДИАГНОСТИКИ -->
-<script>
-    console.log("Диагностический модуль активен.");
-    setTimeout(() => {
-        const grid = document.getElementById('grid');
-        if (grid && grid.innerHTML.includes('Загрузка...')) {
-            console.warn("Сетка зависла на 'Загрузка...'. Принудительный рендер...");
-            renderAds();
+    // --- ПРИЩЕПЛЕННАЯ ЛОГИКА ---
+    async function sendMsg() {
+        const text = document.getElementById('msgText').value.trim();
+        if (!text) return;
+        
+        let name = localStorage.getItem('myChatName');
+        if (!name) {
+            name = prompt("Введите ваше имя для отображения в чате:");
+            if (!name) return;
+            localStorage.setItem('myChatName', name);
         }
-    }, 5000);
-</script>
 
+        const { error } = await sb.from('messages').insert([{ 
+            ad_id: Number(activeAdId), 
+            sender: name, 
+            text: text 
+        }]);
+
+        if (error) {
+            console.error("Ошибка отправки:", error);
+            alert("Не удалось отправить сообщение. Проверьте настройки RLS в базе.");
+        } else {
+            document.getElementById('msgText').value = ''; 
+            openChat(activeAdId);
+        }
+    }
+</script>
 </body>
-</h
+</html>
