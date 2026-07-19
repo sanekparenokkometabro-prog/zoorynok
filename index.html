@@ -410,14 +410,14 @@
         }).join('');
     }
 
-    // --- МОДУЛЬ ПРИНУДИТЕЛЬНОГО ОТОБРАЖЕНИЯ (АНТИ-ЗАВИСАНИЕ) ---
+    // --- МОДУЛЬ ПРИНУДИТЕЛЬНОГО РЕНДЕРА (АНТИ-ЗАВИСАНИЕ) ---
     setTimeout(() => {
-        const grid = document.getElementById('grid');
-        if (grid && grid.innerHTML.includes('Загрузка...')) {
-            if (ads.length > 0) {
-                console.log("Supabase ответил медленно, рендерим кэш...");
-                isLoaded = true;
-                renderAds();
-            }
+        if (!isLoaded || (ads.length > 0 && document.getElementById('grid').innerHTML.includes('Загрузка...'))) {
+            console.log("Запускаю принудительный рендер...");
+            isLoaded = true;
+            renderAds();
         }
-    }, 
+    }, 3000);
+</script>
+</body>
+</html>
