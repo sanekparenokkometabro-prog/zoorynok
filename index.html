@@ -320,27 +320,17 @@
         }
     }
 
-    // --- ДОПОЛНЕНИЯ: ЧАТЫ И ИНДИКАТОРЫ ---
-    
     async function openChat(id) {
         activeAdId = id; 
         hideModal('viewModal'); 
         showModal('chatModal');
         let name = localStorage.getItem('myChatName');
-        
-        // Помечаем прочитанными
-        await sb.from('messages')
-            .update({ is_read: true })
-            .eq('ad_id', id)
-            .neq('sender', name)
-            .eq('is_read', false);
-
+        await sb.from('messages').update({ is_read: true }).eq('ad_id', id).neq('sender', name).eq('is_read', false);
         const { data } = await sb.from('messages').select('*').eq('ad_id', id).order('created_at', { ascending: true });
         document.getElementById('messages').innerHTML = data?.map(m => `
             <div style="margin-bottom:8px; word-break:break-word;">
                 <b>${m.sender || 'Аноним'}:</b> ${m.text}
             </div>`).join('') || '<div style="color:gray;">Нет сообщений.</div>';
-        
         const box = document.getElementById('messages');
         box.scrollTop = box.scrollHeight;
     }
@@ -372,7 +362,6 @@
             if (!chatStats[m.ad_id]) chatStats[m.ad_id] = { unread: false };
             if (m.sender !== name && m.is_read === false) chatStats[m.ad_id].unread = true;
         });
-        
         const uniqueIds = Object.keys(chatStats);
         document.getElementById('chatsList').innerHTML = uniqueIds.map(id => {
             const ad = ads.find(a => a.id == id);
