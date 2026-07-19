@@ -85,16 +85,16 @@
     const sb = supabase.createClient('https://qdesomzmhrghygzprftz.supabase.co', 'sb_publishable_ru6cRM3d9mYcDj7tjvAStQ_7rqIftg0');
     
     let ads = JSON.parse(localStorage.getItem('cached_ads') || '[]');
-    let myFavs = [], activeAdId = null, slideIdx = 0, activeCat = '', isMyMode = false;
+    let myFavs = [], activeAdId = null, slideIdx = 0, activeCat = '', isMyMode = false, isLoaded = false;
 
-    // Гарантированный запуск при открытии страницы
     document.addEventListener('DOMContentLoaded', () => {
         initApp();
     });
 
     async function initApp() {
-        renderAds();
         await loadData();
+        isLoaded = true;
+        renderAds();
         updateMyFavs();
     }
 
@@ -103,12 +103,16 @@
         if (data) {
             ads = data;
             localStorage.setItem('cached_ads', JSON.stringify(data));
-            renderAds();
         }
     }
 
     function renderAds() {
         const grid = document.getElementById('grid');
+        if (!isLoaded) {
+            grid.innerHTML = '<p style="padding:20px; text-align:center;">Загрузка данных...</p>';
+            return;
+        }
+
         const query = document.getElementById('searchInput').value.toLowerCase();
         let filtered = ads.filter(ad => (ad.title?.toLowerCase().includes(query) || ad.desc?.toLowerCase().includes(query)) && (activeCat === '' || ad.category === activeCat));
         
@@ -196,7 +200,7 @@
         const adData = { title: document.getElementById('title').value, phone: phone, price: document.getElementById('price').value, desc: document.getElementById('desc').value, category: document.getElementById('category').value, images: imgs.join('|'), breed: document.getElementById('breed').value, city: document.getElementById('city').value };
         const { error } = await sb.from('ads').insert([adData]);
         if (error) { alert("Ошибка"); btn.disabled = false; }
-        else { alert("Успешно!"); hideModal('form'); loadData(); }
+        else { alert("Успешно!"); hideModal('form'); loadData(); renderAds(); }
     }
 
     function showModal(id) { document.getElementById(id).style.display = 'flex'; }
