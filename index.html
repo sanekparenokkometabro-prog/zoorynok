@@ -157,7 +157,9 @@
         isLoaded = true;
         renderAds();
         updateMyFavs();
-        updateMessageIndicators(); 
+        
+        // Запуск индикатора
+        updateMessageIndicators();
         setInterval(updateMessageIndicators, 30000);
     }
 
@@ -372,6 +374,20 @@
         box.scrollTop = box.scrollHeight;
     }
 
+    async function sendMsg() {
+        const text = document.getElementById('msgText').value.trim();
+        if (!text) return;
+        let name = localStorage.getItem('myChatName');
+        if (!name) {
+            name = prompt("Введите ваше имя для отображения в чате:");
+            if (!name) return;
+            localStorage.setItem('myChatName', name);
+        }
+        await sb.from('messages').insert([{ ad_id: activeAdId, sender: name, text: text }]);
+        document.getElementById('msgText').value = ''; 
+        openChat(activeAdId);
+    }
+
     async function showMyChats() {
         showModal('myChatsModal');
         let name = localStorage.getItem('myChatName');
@@ -399,21 +415,4 @@
         document.getElementById('favList').innerHTML = myFavs.map(id => {
             const ad = ads.find(a => a.id == id);
             return `<div style="padding:12px; border-bottom:1px solid #eee; cursor:pointer;" onclick="hideModal('favModal'); openView('${id}')">
-                ❤️ <b>${ad ? ad.title : 'Удалено'}</b> ${ad ? `— ${ad.price} грн` : ''}
-            </div>`;
-        }).join('');
-    }
-
-    async function sendMsg() {
-        const text = document.getElementById('msgText').value.trim();
-        if (!text) return;
-        
-        let name = localStorage.getItem('myChatName');
-        if (!name) {
-            name = prompt("Введите ваше имя для отображения в чате:");
-            if (!name) return;
-            localStorage.setItem('myChatName', name);
-        }
-
-        const { error } = await sb.from('messages').insert([{ 
-            ad_i
+   
