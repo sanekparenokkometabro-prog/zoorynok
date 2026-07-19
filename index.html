@@ -92,7 +92,15 @@
     });
 
     async function initApp() {
+        const timer = setTimeout(() => {
+            if (!isLoaded) {
+                document.getElementById('grid').innerHTML = '<p style="padding:20px; text-align:center;">Ошибка подключения к базе. Проверьте RLS в Supabase.</p>';
+            }
+        }, 5000);
+
         await loadData();
+        clearTimeout(timer);
+        
         isLoaded = true;
         renderAds();
         updateMyFavs();
