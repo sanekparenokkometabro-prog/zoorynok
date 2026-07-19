@@ -411,11 +411,17 @@
     }
 </script>
 
-<!-- ПРИЩЕПЛЕННЫЙ ДИАГНОСТИЧЕСКИЙ МОДУЛЬ -->
+<!-- ПРИЩЕПЛЕННЫЙ МОДУЛЬ ДИАГНОСТИКИ -->
 <script>
-    (function diagnosticModule() {
-        console.log("ZooRynok: Модуль диагностики активен.");
-        setTimeout(() => {
-            if (document.getElementById('grid').innerHTML.includes('Загрузка...') && ads.length > 0) {
-                console.warn("ZooRynok: Данные есть, но сетка не прогрузилась. Принудительный рендер...");
-          
+    console.log("Диагностический модуль активен.");
+    setTimeout(() => {
+        const grid = document.getElementById('grid');
+        if (grid && grid.innerHTML.includes('Загрузка...')) {
+            console.warn("Сетка зависла на 'Загрузка...'. Принудительный рендер...");
+            renderAds();
+        }
+    }, 5000);
+</script>
+
+</body>
+</h
