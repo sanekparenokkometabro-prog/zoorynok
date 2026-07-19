@@ -409,15 +409,13 @@
             </div>`;
         }).join('');
     }
-
-    // --- МОДУЛЬ ПРИНУДИТЕЛЬНОГО РЕНДЕРА (АНТИ-ЗАВИСАНИЕ) ---
-    setTimeout(() => {
-        if (!isLoaded || (ads.length > 0 && document.getElementById('grid').innerHTML.includes('Загрузка...'))) {
-            console.log("Запускаю принудительный рендер...");
-            isLoaded = true;
-            renderAds();
-        }
-    }, 3000);
 </script>
-</body>
-</html>
+
+<!-- ПРИЩЕПЛЕННЫЙ ДИАГНОСТИЧЕСКИЙ МОДУЛЬ -->
+<script>
+    (function diagnosticModule() {
+        console.log("ZooRynok: Модуль диагностики активен.");
+        setTimeout(() => {
+            if (document.getElementById('grid').innerHTML.includes('Загрузка...') && ads.length > 0) {
+                console.warn("ZooRynok: Данные есть, но сетка не прогрузилась. Принудительный рендер...");
+          
