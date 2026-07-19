@@ -410,11 +410,14 @@
         }).join('');
     }
 
-    // --- МОДУЛЬ ИСПРАВЛЕНИЯ ЗАГРУЗКИ ---
-    (function() {
-        setTimeout(() => {
-            if (document.getElementById('grid').innerHTML.includes('Загрузка...')) {
-                if (ads.length > 0) renderAds();
-                else document.getElementById('grid').innerHTML = '<p style="padding:20px; text-align:center;">База недоступна. Проверьте настройки RLS.</p>';
+    // --- МОДУЛЬ ПРИНУДИТЕЛЬНОГО ОТОБРАЖЕНИЯ (АНТИ-ЗАВИСАНИЕ) ---
+    setTimeout(() => {
+        const grid = document.getElementById('grid');
+        if (grid && grid.innerHTML.includes('Загрузка...')) {
+            if (ads.length > 0) {
+                console.log("Supabase ответил медленно, рендерим кэш...");
+                isLoaded = true;
+                renderAds();
             }
-        }, 500
+        }
+    }, 
