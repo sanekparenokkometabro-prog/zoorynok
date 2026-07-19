@@ -43,7 +43,7 @@
     <div class="cat-btn" onclick="filterCat('Веттовары')">Веттовары</div>
     <div class="cat-btn" onclick="filterCat('Комбикорма')">Комбикорма</div>
     <div class="cat-btn" onclick="filterCat('Сельхозживотные')">Сельхозживотные</div>
-    <div class="cat-btn" onclick="filterCat('Домашние питомцы')">Питомцы</div>
+    <div class="cat-btn" onclick="filterCat('Домашние пицомцы')">Питомцы</div>
 </div>
 
 <div class="grid" id="grid"><p style="padding:20px; text-align:center;">Загрузка...</p></div>
@@ -350,18 +350,29 @@
         }
     }
 
-    // --- ЛОГИКА ИНДИКАТОРА СООБЩЕНИЙ ---
+    // --- ОБНОВЛЕННАЯ ЛОГИКА ИНДИКАТОРА И СВЯЗИ ЧАТОВ ---
+
     async function openChat(id) {
         activeAdId = id; 
         hideModal('viewModal'); 
         showModal('chatModal');
-        // Отмечаем как прочитанные
-        await sb.from('messages').update({ read: true }).eq('ad_id', id).eq('read', false);
+        
+        // Отмечаем как прочитанные только те входящие сообщения, где мы получатель
+        const myPhone = localStorage.getItem('myPhone');
+        if (myPhone) {
+            await sb.from('messages')
+                .update({ read: true })
+                .eq('ad_id', id)
+                .eq('recipient', String(myPhone).trim())
+                .eq('read', false);
+        }
+        
         const { data } = await sb.from('messages').select('*').eq('ad_id', id).order('created_at', { ascending: true });
         document.getElementById('messages').innerHTML = data?.map(m => `
             <div style="margin-bottom:8px; word-break:break-word;">
                 <b>${m.sender || 'Аноним'}:</b> ${m.text}
             </div>`).join('') || '<div style="color:gray;">Нет сообщений. Начните диалог первым!</div>';
+        
         const box = document.getElementById('messages');
         box.scrollTop = box.scrollHeight;
     }
@@ -371,12 +382,23 @@
         if (!text) return;
         let name = localStorage.getItem('myChatName');
         if (!name) {
-            name = prompt("Введите ваше имя:");
+            name = prompt("Введите ваше имя для отображения в чате:");
             if (!name) return;
             localStorage.setItem('myChatName', name);
         }
-        // Отправляем с read: false
-        await sb.from('messages').insert([{ ad_id: activeAdId, sender: name, text: text, read: false }]);
+        
+        const ad = ads.find(a => a.id == activeAdId);
+        // Записываем получателем номер телефона создателя объявления (или admin при сбое)
+        const recipient = ad ? String(ad.phone).trim() : 'admin'; 
+
+        await sb.from('messages').insert([{ 
+            ad_id: activeAdId, 
+            sender: name, 
+            text: text,
+            read: false,
+            recipient: recipient
+        }]);
+        
         document.getElementById('msgText').value = ''; 
         openChat(activeAdId);
     }
@@ -384,24 +406,23 @@
     async function showMyChats() {
         showModal('myChatsModal');
         let name = localStorage.getItem('myChatName');
-        if (!name) {
-            document.getElementById('chatsList').innerHTML = '<div style="padding:10px; color:gray;">Вы еще не общались</div>';
+        let phone = localStorage.getItem('myPhone');
+        
+        if (!name && !phone) {
+            document.getElementById('chatsList').innerHTML = '<div style="padding:10px; color:gray;">Вы еще не авторизованы (подайте объявление или добавьте в избранное)</div>';
             return;
         }
-        const { data } = await sb.from('messages').select('ad_id').eq('sender', name);
-        // Получаем все непрочитанные сообщения, адресованные текущему пользователю
-        const { data: unreadData } = await sb.from('messages').select('ad_id').eq('read', false);
-        const unreadIds = new Set(unreadData?.map(m => m.ad_id) || []);
+        
+        // Достаем переписку, привязанную к имени отправителя или телефону получателя
+        const { data } = await sb.from('messages')
+            .select('ad_id, recipient, read')
+            .or(`sender.eq.${name},recipient.eq.${phone}`);
+            
         const uniqueIds = [...new Set(data?.map(m => m.ad_id) || [])];
+        
+        // Проверяем наличие непрочитанных сообщений именно для нашего номера телефона
+        const unreadIds = new Set(data?.filter(m => m.read === false && String(m.recipient).trim() === String(phone).trim()).map(m => m.ad_id));
         
         document.getElementById('chatsList').innerHTML = uniqueIds.map(id => {
             const ad = ads.find(a => a.id == id);
-            return `<div style="padding:12px; border-bottom:1px solid #eee; cursor:pointer; font-weight:bold;" onclick="hideModal('myChatsModal'); openChat('${id}')">
-                ${unreadIds.has(Number(id)) ? '🔴 ' : '💬 '} ${ad ? ad.title : 'Удаленное объявление'}
-            </div>`;
-        }).join('') || '<div style="padding:10px; color:gray;">Нет активных диалогов</div>';
-    }
-    // ------------------------------------
-</script>
-</body>
-</html>
+            return `<div style="padding:12px; border-bottom:1px solid #eee; cursor:pointer;" onclick
