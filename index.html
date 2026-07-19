@@ -27,6 +27,7 @@
         .slider-container { position: relative; width: 100%; height: 250px; overflow: hidden; border-radius: 5px; margin-bottom: 10px; }
         .slider-img { width: 100%; height: 250px; object-fit: cover; display: none; }
         .slider-img.active { display: block; }
+        .nav-btn { position: absolute; top: 50%; transform: translateY(-50%); background: rgba(0,0,0,0.5); color: white; border: none; padding: 10px; cursor: pointer; }
     </style>
 </head>
 <body>
@@ -55,13 +56,17 @@
     <button onclick="manageMyAds()" style="background:none; border:none; color:white; font-size:24px;">👤</button>
 </div>
 
-<!-- Модальное окно формы -->
 <div id="form" class="modal"><div class="content">
     <h2>Новое объявление</h2>
     <input id="title" class="field" placeholder="Название">
-    <input list="cities" id="city" class="field" placeholder="Город...">
+    <label for="city">Город:</label>
+    <input list="cities" id="city" class="field" placeholder="Выберите или введите город...">
     <datalist id="cities">
         <option value="Киев"><option value="Кривой Рог"><option value="Харьков"><option value="Одесса"><option value="Днепр">
+        <option value="Запорожье"><option value="Львов"><option value="Николаев"><option value="Винница"><option value="Чернигов">
+        <option value="Полтава"><option value="Черкассы"><option value="Хмельницкий"><option value="Черновцы"><option value="Житомир">
+        <option value="Сумы"><option value="Ровно"><option value="Ивано-Франковск"><option value="Кропивницкий"><option value="Тернополь">
+        <option value="Луцк"><option value="Ужгород">
     </datalist>
     <input id="price" class="field" type="number" placeholder="Цена">
     <input id="breed" class="field" placeholder="Порода">
@@ -73,7 +78,7 @@
     <label for="photoInput" style="display:block; padding:10px; background:#e0e0e0; border-radius:5px; text-align:center; cursor:pointer;">📸 Выбрать фото</label>
     <input type="file" id="photoInput" accept="image/*" multiple style="display:none" onchange="previewPhotos()">
     <div id="previewArea" style="display:flex; gap:5px; margin-top:10px; overflow-x:auto;"></div>
-    <button class="action-btn btn-chat" onclick="saveAd()" style="width:100%; margin-top:10px;">Опубликовать</button>
+    <button id="saveBtn" class="action-btn btn-chat" onclick="saveAd()" style="width:100%; margin-top:10px;">Опубликовать</button>
     <button onclick="hideModal('form')" style="width:100%; margin-top:10px; background:none; border:none; color:red;">Отмена</button>
 </div></div>
 
@@ -101,37 +106,52 @@
 
 <script>
     const sb = supabase.createClient('https://qdesomzmhrghygzprftz.supabase.co', 'sb_publishable_ru6cRM3d9mYcDj7tjvAStQ_7rqIftg0');
+    
     let ads = JSON.parse(localStorage.getItem('cached_ads') || '[]');
-    let myFavs = [], activeAdId = null, activeCat = '', isMyMode = false;
+    let myFavs = [], activeAdId = null, slideIdx = 0, activeCat = '', isMyMode = false, isLoaded = false;
 
-    document.addEventListener('DOMContentLoaded', () => initApp());
+    document.addEventListener('DOMContentLoaded', () => { initApp(); });
 
-    async function initApp() { await loadData(); renderAds(); updateMyFavs(); }
+    async function initApp() {
+        const timer = setTimeout(() => { if (!isLoaded) document.getElementById('grid').innerHTML = '<p style="padding:20px; text-align:center;">Ошибка подключения.</p>'; }, 8000);
+        await loadData();
+        clearTimeout(timer);
+        isLoaded = true;
+        renderAds();
+        updateMyFavs();
+    }
 
     async function loadData() {
-        const { data } = await sb.from('ads').select('*').order('id', { ascending: false });
-        if (data) { ads = data; localStorage.setItem('cached_ads', JSON.stringify(data)); }
+        try {
+            const { data, error } = await sb.from('ads').select('*').order('id', { ascending: false });
+            if (error) throw error;
+            if (data) { ads = data; localStorage.setItem('cached_ads', JSON.stringify(data)); }
+        } catch (err) { console.error("Ошибка загрузки:", err); }
     }
 
     function renderAds() {
         const grid = document.getElementById('grid');
         const query = document.getElementById('searchInput').value.toLowerCase();
         let filtered = ads.filter(ad => (ad.title?.toLowerCase().includes(query) || ad.desc?.toLowerCase().includes(query)) && (activeCat === '' || ad.category === activeCat));
-        if (isMyMode) filtered = filtered.filter(ad => String(ad.phone).trim() === String(localStorage.getItem('myPhone')).trim());
-        grid.innerHTML = filtered.length > 0 ? filtered.map(ad => `
+        if (isMyMode) {
+            const myPhone = localStorage.getItem('myPhone');
+            filtered = filtered.filter(ad => String(ad.phone).trim() === String(myPhone).trim());
+        }
+        if (filtered.length === 0) { grid.innerHTML = '<p style="padding:20px; text-align:center;">Объявлений пока нет</p>'; return; }
+        grid.innerHTML = filtered.map(ad => `
             <div class="card">
                 <div onclick="openView('${ad.id}')">
-                    <img src="${ad.images ? ad.images.split('|')[0] : ''}">
+                    <img src="${ad.images ? ad.images.split('|')[0] : ''}" loading="lazy">
                     <b>${ad.title}</b><br><small>${ad.price} грн</small>
                 </div>
                 <button onclick="toggleFavorite('${ad.id}')" style="margin-top:5px; width:100%; border:none; background:#eee; color: ${myFavs.includes(Number(ad.id)) ? 'red' : 'gray'}">♥</button>
                 ${isMyMode ? `<button onclick="deleteAd('${ad.id}')" style="margin-top:5px; width:100%; border:none; background:#ffeded; color:red;">Удалить</button>` : ''}
-            </div>`).join('') : '<p style="padding:20px; text-align:center;">Объявлений нет</p>';
+            </div>`).join('');
     }
 
     function resetApp() { isMyMode = false; activeCat = ''; document.getElementById('searchInput').value = ''; renderAds(); }
     function filterCat(cat) { activeCat = cat; isMyMode = false; renderAds(); }
-    
+
     async function deleteAd(adId) {
         if (!confirm("Удалить?")) return;
         await sb.from('ads').delete().eq('id', adId);
@@ -140,7 +160,7 @@
     }
 
     function manageMyAds() {
-        const phone = prompt("Ваш номер:");
+        const phone = localStorage.getItem('myPhone') || prompt("Введите ваш номер:");
         if (!phone) return;
         localStorage.setItem('myPhone', phone);
         isMyMode = true; renderAds();
@@ -156,7 +176,7 @@
     }
 
     async function toggleFavorite(adId) {
-        let name = localStorage.getItem('myChatName') || prompt("Ваше имя:");
+        let name = localStorage.getItem('myChatName') || prompt("Введите ваше имя:");
         if (!name) return;
         localStorage.setItem('myChatName', name);
         const idNum = Number(adId);
@@ -180,6 +200,7 @@
     }
 
     async function saveAd() {
+        const btn = document.getElementById('saveBtn'); btn.disabled = true;
         const phone = document.getElementById('phone').value;
         localStorage.setItem('myPhone', phone);
         const files = document.getElementById('photoInput').files;
@@ -191,7 +212,7 @@
         await sb.from('ads').insert([{ title: document.getElementById('title').value, phone: phone, price: document.getElementById('price').value, desc: document.getElementById('desc').value, category: document.getElementById('category').value, images: imgs.join('|'), breed: document.getElementById('breed').value, city: document.getElementById('city').value }]);
         alert("Опубликовано!");
         hideModal('form');
-        loadData().then(renderAds);
+        await loadData(); renderAds(); btn.disabled = false;
     }
 
     function showModal(id) { document.getElementById(id).style.display = 'flex'; }
@@ -200,20 +221,27 @@
     function openView(id) {
         const ad = ads.find(a => a.id == id);
         const imgs = ad.images ? ad.images.split('|') : [];
+        slideIdx = 0;
         document.getElementById('viewContent').innerHTML = `
             <h2>${ad.title}</h2>
-            <div class="slider-container"> ${imgs.map((i, idx) => `<img src="${i}" class="slider-img ${idx === 0 ? 'active' : ''}">`).join('')} </div>
+            <div class="slider-container"> ${imgs.map((i, idx) => `<img src="${i}" class="slider-img ${idx === 0 ? 'active' : ''}">`).join('')} ${imgs.length > 1 ? `<button class="nav-btn" style="left:0" onclick="moveSlide(-1)">❮</button><button class="nav-btn" style="right:0" onclick="moveSlide(1)">❯</button>` : ''}</div>
             <p>Цена: ${ad.price} грн | Город: ${ad.city}</p><p>${ad.desc}</p>
-            <div style="display:flex; margin-top:10px;">
+            <div style="display:flex; gap:10px; margin-top:10px;">
                 <button class="action-btn btn-chat" onclick="openChat('${ad.id}')">Написать</button>
                 <a href="tel:${ad.phone}" class="action-btn btn-call" style="text-decoration:none; padding-top:12px;">Позвонить</a>
             </div>
-            <button onclick="hideModal('viewModal')" style="width:100%; margin-top:10px; background:none; border:1px solid #ccc; padding:10px; border-radius:5px;">Закрыть</button>`;
+            <button onclick="hideModal('viewModal')" style="width:100%; margin-top:10px; background:none; border:none; padding:10px;">Закрыть</button>`;
         showModal('viewModal');
+    }
+
+    function moveSlide(n) {
+        const s = document.querySelectorAll('.slider-img');
+        if (s.length > 0) { s[slideIdx].classList.remove('active'); slideIdx = (slideIdx + n + s.length) % s.length; s[slideIdx].classList.add('active'); }
     }
 
     async function openChat(id) {
         activeAdId = id; hideModal('viewModal'); showModal('chatModal');
+        // Помечаем все сообщения в этом чате как прочитанные
         await sb.from('messages').update({ read: true }).eq('ad_id', id).eq('read', false);
         const { data } = await sb.from('messages').select('*').eq('ad_id', id).order('created_at', { ascending: true });
         document.getElementById('messages').innerHTML = data?.map(m => `<div><b>${m.sender}:</b> ${m.text}</div>`).join('') || 'Нет сообщений.';
@@ -223,6 +251,7 @@
         const text = document.getElementById('msgText').value.trim();
         const name = localStorage.getItem('myChatName');
         if (!text || !name) return;
+        // Отправляем с read: false
         await sb.from('messages').insert([{ ad_id: activeAdId, sender: name, text: text, read: false }]);
         document.getElementById('msgText').value = '';
         openChat(activeAdId);
@@ -233,13 +262,16 @@
         const name = localStorage.getItem('myChatName');
         if (!name) return;
         const { data } = await sb.from('messages').select('ad_id').eq('sender', name);
+        // Получаем ID чатов, где есть непрочитанные сообщения
         const { data: unreadData } = await sb.from('messages').select('ad_id').eq('read', false);
         const unreadIds = new Set(unreadData?.map(m => m.ad_id) || []);
+        
         const uniqueIds = [...new Set(data?.map(m => m.ad_id) || [])];
         document.getElementById('chatsList').innerHTML = uniqueIds.map(id => {
             const ad = ads.find(a => a.id == id);
-            return `<div style="padding:10px; border-bottom:1px solid #eee;" onclick="hideModal('myChatsModal'); openChat('${id}')">
-                ${unreadIds.has(Number(id)) ? '🔴 ' : ''} 💬 ${ad ? ad.title : 'Удалено'}
+            const isUnread = unreadIds.has(Number(id));
+            return `<div style="padding:10px; border-bottom:1px solid #eee; cursor:pointer;" onclick="hideModal('myChatsModal'); openChat('${id}')">
+                ${isUnread ? '🔴 ' : '💬 '} ${ad ? ad.title : 'Удалено'}
             </div>`;
         }).join('');
     }
