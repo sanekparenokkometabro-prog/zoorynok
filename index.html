@@ -157,8 +157,8 @@
         isLoaded = true;
         renderAds();
         updateMyFavs();
-        updateMessageIndicators(); // Проверка при старте
-        setInterval(updateMessageIndicators, 30000); // Проверка каждые 30 секунд
+        updateMessageIndicators(); 
+        setInterval(updateMessageIndicators, 30000);
     }
 
     async function loadData() {
@@ -415,4 +415,5 @@
             localStorage.setItem('myChatName', name);
         }
 
-        const { error } = aw
+        const { error } = await sb.from('messages').insert([{ 
+            ad_i
