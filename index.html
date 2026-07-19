@@ -56,46 +56,19 @@
     <button onclick="manageMyAds()" style="background:none; border:none; color:white; font-size:24px;">👤</button>
 </div>
 
-<!-- Модальное окно формы подачи объявления -->
 <div id="form" class="modal"><div class="content">
     <h2>Новое объявление</h2>
     <input id="title" class="field" placeholder="Название">
-    
     <label for="city">Город:</label>
     <input list="cities" id="city" class="field" placeholder="Выберите или введите город...">
     <datalist id="cities">
-        <option value="Киев">
-        <option value="Кривой Рог">
-        <option value="Харьков">
-        <option value="Одесса">
-        <option value="Днепр">
-        <option value="Запорожье">
-        <option value="Львов">
-        <option value="Николаев">
-        <option value="Винница">
-        <option value="Чернигов">
-        <option value="Полтава">
-        <option value="Черкассы">
-        <option value="Хмельницкий">
-        <option value="Черновцы">
-        <option value="Житомир">
-        <option value="Сумы">
-        <option value="Ровно">
-        <option value="Ивано-Франковск">
-        <option value="Кропивницкий">
-        <option value="Тернополь">
-        <option value="Луцк">
-        <option value="Ужгород">
+        <option value="Киев"><option value="Кривой Рог"><option value="Харьков"><option value="Одесса"><option value="Днепр"><option value="Запорожье"><option value="Львов"><option value="Николаев"><option value="Винница"><option value="Чернигов"><option value="Полтава"><option value="Черкассы"><option value="Хмельницкий"><option value="Черновцы"><option value="Житомир"><option value="Сумы"><option value="Ровно"><option value="Ивано-Франковск"><option value="Кропивницкий"><option value="Тернополь"><option value="Луцк"><option value="Ужгород">
     </datalist>
-
     <input id="price" class="field" type="number" placeholder="Цена">
     <input id="breed" class="field" placeholder="Порода">
     <input id="phone" class="field" type="tel" placeholder="Ваш номер">
     <select id="category" class="field">
-        <option>Веттовары</option>
-        <option>Комбикорма</option>
-        <option>Сельхозживотные</option>
-        <option>Домашние питомцы</option>
+        <option>Веттовары</option><option>Комбикорма</option><option>Сельхозживотные</option><option>Домашние питомцы</option>
     </select>
     <textarea id="desc" class="field" placeholder="Описание"></textarea>
     <label for="photoInput" style="display:block; padding:10px; background:#e0e0e0; border-radius:5px; text-align:center; cursor:pointer;">📸 Выбрать фото</label>
@@ -105,7 +78,6 @@
     <button onclick="hideModal('form')" style="width:100%; margin-top:10px; background:none; border:none; color:red;">Отмена</button>
 </div></div>
 
-<!-- Окна для просмотра, чатов и избранного -->
 <div id="viewModal" class="modal"><div class="content" id="viewContent"></div></div>
 
 <div id="chatModal" class="modal"><div class="content">
@@ -130,7 +102,6 @@
 
 <script>
     const sb = supabase.createClient('https://qdesomzmhrghygzprftz.supabase.co', 'sb_publishable_ru6cRM3d9mYcDj7tjvAStQ_7rqIftg0');
-    
     let ads = JSON.parse(localStorage.getItem('cached_ads') || '[]');
     let myFavs = [], activeAdId = null, slideIdx = 0, activeCat = '', isMyMode = false, isLoaded = false;
 
@@ -300,7 +271,6 @@
             alert("Успешно опубликовано!"); 
             hideModal('form'); 
             
-            // Очистка формы
             document.getElementById('title').value = '';
             document.getElementById('price').value = '';
             document.getElementById('desc').value = '';
@@ -350,15 +320,26 @@
         }
     }
 
+    // --- ДОПОЛНЕНИЯ: ЧАТЫ И ИНДИКАТОРЫ ---
+    
     async function openChat(id) {
         activeAdId = id; 
         hideModal('viewModal'); 
         showModal('chatModal');
+        let name = localStorage.getItem('myChatName');
+        
+        // Помечаем прочитанными
+        await sb.from('messages')
+            .update({ is_read: true })
+            .eq('ad_id', id)
+            .neq('sender', name)
+            .eq('is_read', false);
+
         const { data } = await sb.from('messages').select('*').eq('ad_id', id).order('created_at', { ascending: true });
         document.getElementById('messages').innerHTML = data?.map(m => `
             <div style="margin-bottom:8px; word-break:break-word;">
                 <b>${m.sender || 'Аноним'}:</b> ${m.text}
-            </div>`).join('') || '<div style="color:gray;">Нет сообщений. Начните диалог первым!</div>';
+            </div>`).join('') || '<div style="color:gray;">Нет сообщений.</div>';
         
         const box = document.getElementById('messages');
         box.scrollTop = box.scrollHeight;
@@ -369,11 +350,11 @@
         if (!text) return;
         let name = localStorage.getItem('myChatName');
         if (!name) {
-            name = prompt("Введите ваше имя для отображения в чате:");
+            name = prompt("Введите ваше имя:");
             if (!name) return;
             localStorage.setItem('myChatName', name);
         }
-        await sb.from('messages').insert([{ ad_id: activeAdId, sender: name, text: text }]);
+        await sb.from('messages').insert([{ ad_id: activeAdId, sender: name, text: text, is_read: false }]);
         document.getElementById('msgText').value = ''; 
         openChat(activeAdId);
     }
@@ -382,32 +363,34 @@
         showModal('myChatsModal');
         let name = localStorage.getItem('myChatName');
         if (!name) {
-            document.getElementById('chatsList').innerHTML = '<div style="padding:10px; color:gray;">Вы еще не общались в чатах</div>';
+            document.getElementById('chatsList').innerHTML = '<div style="padding:10px; color:gray;">Вы еще не общались.</div>';
             return;
         }
-        const { data } = await sb.from('messages').select('ad_id').eq('sender', name);
-        const uniqueIds = [...new Set(data?.map(m => m.ad_id) || [])];
+        const { data } = await sb.from('messages').select('ad_id, is_read, sender').or(`sender.eq.${name}`);
+        const chatStats = {};
+        data?.forEach(m => {
+            if (!chatStats[m.ad_id]) chatStats[m.ad_id] = { unread: false };
+            if (m.sender !== name && m.is_read === false) chatStats[m.ad_id].unread = true;
+        });
         
+        const uniqueIds = Object.keys(chatStats);
         document.getElementById('chatsList').innerHTML = uniqueIds.map(id => {
             const ad = ads.find(a => a.id == id);
-            return `<div style="padding:12px; border-bottom:1px solid #eee; cursor:pointer; font-weight:bold;" onclick="hideModal('myChatsModal'); openChat('${id}')">
-                💬 ${ad ? ad.title : 'Удаленное объявление'}
+            return `<div style="padding:12px; border-bottom:1px solid #eee; display:flex; justify-content:space-between;" onclick="hideModal('myChatsModal'); openChat('${id}')">
+                <span>💬 ${ad ? ad.title : 'Удаленное объявление'}</span>
+                ${chatStats[id].unread ? '<span style="color:red;">❗️</span>' : ''}
             </div>`;
-        }).join('') || '<div style="padding:10px; color:gray;">Нет активных диалогов</div>';
+        }).join('') || '<div style="padding:10px; color:gray;">Нет диалогов</div>';
     }
 
     async function showFavorites() {
         showModal('favModal');
-        if (myFavs.length === 0) {
-            document.getElementById('favList').innerHTML = '<div style="padding:10px; color:gray;">Список избранного пуст</div>';
-            return;
-        }
         document.getElementById('favList').innerHTML = myFavs.map(id => {
             const ad = ads.find(a => a.id == id);
             return `<div style="padding:12px; border-bottom:1px solid #eee; cursor:pointer;" onclick="hideModal('favModal'); openView('${id}')">
-                ❤️ <b>${ad ? ad.title : 'Удалено'}</b> ${ad ? `— ${ad.price} грн` : ''}
+                ❤️ <b>${ad ? ad.title : 'Удалено'}</b>
             </div>`;
-        }).join('');
+        }).join('') || '<div style="padding:10px; color:gray;">Пусто</div>';
     }
 </script>
 </body>
