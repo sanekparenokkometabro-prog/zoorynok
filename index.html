@@ -33,9 +33,11 @@
 <body>
 
 <header><h1>ЗооРынок 🐾</h1></header>
+
 <div class="search-box">
     <input type="text" id="searchInput" class="search-input" placeholder="Поиск..." oninput="renderAds()">
 </div>
+
 <div class="categories">
     <div class="cat-btn" onclick="resetApp()">Все</div>
     <div class="cat-btn" onclick="filterCat('Веттовары')">Веттовары</div>
@@ -54,6 +56,7 @@
     <button onclick="manageMyAds()" style="background:none; border:none; color:white; font-size:24px;">👤</button>
 </div>
 
+<!-- Модальное окно формы подачи объявления -->
 <div id="form" class="modal"><div class="content">
     <h2>Новое объявление</h2>
     <input id="title" class="field" placeholder="Название">
@@ -61,7 +64,12 @@
     <input id="price" class="field" type="number" placeholder="Цена">
     <input id="breed" class="field" placeholder="Порода">
     <input id="phone" class="field" type="tel" placeholder="Ваш номер">
-    <select id="category" class="field"><option>Веттовары</option><option>Комбикорма</option><option>Сельхозживотные</option><option>Домашние питомцы</option></select>
+    <select id="category" class="field">
+        <option>Веттовары</option>
+        <option>Комбикорма</option>
+        <option>Сельхозживотные</option>
+        <option>Домашние питомцы</option>
+    </select>
     <textarea id="desc" class="field" placeholder="Описание"></textarea>
     <label for="photoInput" style="display:block; padding:10px; background:#e0e0e0; border-radius:5px; text-align:center; cursor:pointer;">📸 Выбрать фото</label>
     <input type="file" id="photoInput" accept="image/*" multiple style="display:none" onchange="previewPhotos()">
@@ -70,7 +78,9 @@
     <button onclick="hideModal('form')" style="width:100%; margin-top:10px; background:none; border:none; color:red;">Отмена</button>
 </div></div>
 
+<!-- Окна для просмотра, чатов и избранного -->
 <div id="viewModal" class="modal"><div class="content" id="viewContent"></div></div>
+
 <div id="chatModal" class="modal"><div class="content">
     <h3>Чат</h3>
     <div id="messages" style="height:200px; overflow-y:auto; border:1px solid #ccc; margin-bottom:10px; padding:5px;"></div>
@@ -78,25 +88,39 @@
     <button class="action-btn btn-chat" onclick="sendMsg()" style="width:100%">Отправить</button>
     <button onclick="hideModal('chatModal')" style="width:100%; margin-top:5px; background:none; border:none; color:red;">Закрыть</button>
 </div></div>
-<div id="myChatsModal" class="modal"><div class="content"><h3>Мои чаты</h3><div id="chatsList"></div><button onclick="hideModal('myChatsModal')" style="width:100%; margin-top:10px; background:none;">Закрыть</button></div></div>
-<div id="favModal" class="modal"><div class="content"><h3>Избранное</h3><div id="favList"></div><button onclick="hideModal('favModal')" style="width:100%; margin-top:10px; background:none;">Закрыть</button></div></div>
+
+<div id="myChatsModal" class="modal"><div class="content">
+    <h3>Мои чаты</h3>
+    <div id="chatsList"></div>
+    <button onclick="hideModal('myChatsModal')" style="width:100%; margin-top:10px; background:none;">Закрыть</button>
+</div></div>
+
+<div id="favModal" class="modal"><div class="content">
+    <h3>Избранное</h3>
+    <div id="favList"></div>
+    <button onclick="hideModal('favModal')" style="width:100%; margin-top:10px; background:none;">Закрыть</button>
+</div></div>
 
 <script>
+    // Инициализация Supabase клиента
     const sb = supabase.createClient('https://qdesomzmhrghygzprftz.supabase.co', 'sb_publishable_ru6cRM3d9mYcDj7tjvAStQ_7rqIftg0');
     
+    // Переменные состояния приложения
     let ads = JSON.parse(localStorage.getItem('cached_ads') || '[]');
     let myFavs = [], activeAdId = null, slideIdx = 0, activeCat = '', isMyMode = false, isLoaded = false;
 
+    // Точка входа при загрузке документа
     document.addEventListener('DOMContentLoaded', () => {
         initApp();
     });
 
+    // Безопасная инициализация приложения с обработкой ожидания
     async function initApp() {
         const timer = setTimeout(() => {
             if (!isLoaded) {
-                document.getElementById('grid').innerHTML = '<p style="padding:20px; text-align:center;">Ошибка подключения к базе. Проверьте RLS в Supabase.</p>';
+                document.getElementById('grid').innerHTML = '<p style="padding:20px; text-align:center;">Ошибка подключения к базе. Проверьте настройки RLS в Supabase.</p>';
             }
-        }, 5000);
+        }, 8000);
 
         await loadData();
         clearTimeout(timer);
@@ -106,20 +130,24 @@
         updateMyFavs();
     }
 
+    // Загрузка данных из таблицы ads
     async function loadData() {
-        const { data } = await sb.from('ads').select('*').order('id', { ascending: false });
-        if (data) {
-            ads = data;
-            localStorage.setItem('cached_ads', JSON.stringify(data));
+        try {
+            const { data, error } = await sb.from('ads').select('*').order('id', { ascending: false });
+            if (error) throw error;
+            if (data) {
+                ads = data;
+                localStorage.setItem('cached_ads', JSON.stringify(data));
+            }
+        } catch (err) {
+            console.error("Ошибка загрузки данных из Supabase:", err);
         }
     }
 
+    // Отрисовка сетки объявлений на экране с учетом фильтров
     function renderAds() {
         const grid = document.getElementById('grid');
-        if (!isLoaded) {
-            grid.innerHTML = '<p style="padding:20px; text-align:center;">Загрузка данных...</p>';
-            return;
-        }
+        if (!isLoaded && ads.length === 0) return;
 
         const query = document.getElementById('searchInput').value.toLowerCase();
         let filtered = ads.filter(ad => (ad.title?.toLowerCase().includes(query) || ad.desc?.toLowerCase().includes(query)) && (activeCat === '' || ad.category === activeCat));
@@ -145,23 +173,43 @@
             </div>`).join('');
     }
 
-    function resetApp() { isMyMode = false; activeCat = ''; document.getElementById('searchInput').value = ''; renderAds(); }
-    function filterCat(cat) { activeCat = cat; isMyMode = false; renderAds(); }
+    // Сброс фильтров и возврат на главный экран
+    function resetApp() { 
+        isMyMode = false; 
+        activeCat = ''; 
+        document.getElementById('searchInput').value = ''; 
+        renderAds(); 
+    }
 
+    // Фильтрация объявлений по категориям
+    function filterCat(cat) { 
+        activeCat = cat; 
+        isMyMode = false; 
+        renderAds(); 
+    }
+
+    // Удаление собственного объявления
     async function deleteAd(adId) {
-        if (!confirm("Удалить?")) return;
-        await sb.from('ads').delete().eq('id', adId);
-        ads = ads.filter(a => a.id != adId);
+        if (!confirm("Вы действительно хотите удалить это объявление?")) return;
+        const { error } = await sb.from('ads').delete().eq('id', adId);
+        if (error) {
+            alert("Не удалось удалить объявление. Проверьте права.");
+        } else {
+            ads = ads.filter(a => a.id != adId);
+            renderAds();
+        }
+    }
+
+    // Переход в режим управления своими объявлениями (Личный кабинет)
+    function manageMyAds() {
+        const phone = localStorage.getItem('myPhone') || prompt("Введите ваш номер телефона для авторизации объявлений:");
+        if (!phone) return;
+        localStorage.setItem('myPhone', phone);
+        isMyMode = true; 
         renderAds();
     }
 
-    function manageMyAds() {
-        const phone = localStorage.getItem('myPhone') || prompt("Введите ваш номер телефона:");
-        if (!phone) return;
-        localStorage.setItem('myPhone', phone);
-        isMyMode = true; renderAds();
-    }
-
+    // Синхронизация списка избранного пользователя
     async function updateMyFavs() {
         const name = localStorage.getItem('myChatName');
         if (name) {
@@ -171,11 +219,14 @@
         }
     }
 
+    // Переключение состояния лайка объявления (Добавить/Удалить)
     async function toggleFavorite(adId) {
-        let name = localStorage.getItem('myChatName') || prompt("Введите ваше имя:");
-        if (!name) return; localStorage.setItem('myChatName', name);
+        let name = localStorage.getItem('myChatName') || prompt("Введите ваше имя для работы с избранным:");
+        if (!name) return; 
+        localStorage.setItem('myChatName', name);
         const idNum = Number(adId);
         const isFav = myFavs.includes(idNum);
+        
         if (isFav) {
             const { data } = await sb.from('favorites').select('id').eq('ad_id', idNum).eq('user_name', name);
             if (data?.length) await sb.from('favorites').delete().eq('id', data[0].id);
@@ -185,83 +236,173 @@
         updateMyFavs();
     }
 
+    // Предпросмотр миниатюр выбранных изображений в форме
     function previewPhotos() {
         const input = document.getElementById('photoInput'), preview = document.getElementById('previewArea');
         preview.innerHTML = '';
         for (let file of input.files) {
             const reader = new FileReader();
-            reader.onload = (e) => { preview.innerHTML += `<img src="${e.target.result}" style="width:60px; height:60px; object-fit:cover; border-radius:5px;">`; }
+            reader.onload = (e) => { 
+                preview.innerHTML += `<img src="${e.target.result}" style="width:60px; height:60px; object-fit:cover; border-radius:5px;">`; 
+            }
             reader.readAsDataURL(file);
         }
     }
 
+    // Сбор данных формы и отправка объявления в Supabase
     async function saveAd() {
-        const btn = document.getElementById('saveBtn'); btn.disabled = true;
+        const btn = document.getElementById('saveBtn'); 
+        btn.disabled = true;
         const phone = document.getElementById('phone').value;
         localStorage.setItem('myPhone', phone);
+        
         const files = document.getElementById('photoInput').files;
         let imgs = [];
+        
         for (let f of files) {
-            let b64 = await new Promise(r => { let reader = new FileReader(); reader.onload = () => r(reader.result); reader.readAsDataURL(f); });
+            let b64 = await new Promise(r => { 
+                let reader = new FileReader(); 
+                reader.onload = () => r(reader.result); 
+                reader.readAsDataURL(f); 
+            });
             imgs.push(b64);
         }
-        const adData = { title: document.getElementById('title').value, phone: phone, price: document.getElementById('price').value, desc: document.getElementById('desc').value, category: document.getElementById('category').value, images: imgs.join('|'), breed: document.getElementById('breed').value, city: document.getElementById('city').value };
+        
+        const adData = { 
+            title: document.getElementById('title').value, 
+            phone: phone, 
+            price: document.getElementById('price').value, 
+            desc: document.getElementById('desc').value, 
+            category: document.getElementById('category').value, 
+            images: imgs.join('|'), 
+            breed: document.getElementById('breed').value, 
+            city: document.getElementById('city').value 
+        };
+        
         const { error } = await sb.from('ads').insert([adData]);
-        if (error) { alert("Ошибка"); btn.disabled = false; }
-        else { alert("Успешно!"); hideModal('form'); loadData(); renderAds(); }
+        if (error) { 
+            alert("Ошибка сохранения объявления. Проверьте структуру полей и RLS."); 
+            btn.disabled = false; 
+        } else { 
+            alert("Успешно опубликовано!"); 
+            hideModal('form'); 
+            
+            // Очистка формы
+            document.getElementById('title').value = '';
+            document.getElementById('price').value = '';
+            document.getElementById('desc').value = '';
+            document.getElementById('breed').value = '';
+            document.getElementById('city').value = '';
+            document.getElementById('photoInput').value = '';
+            document.getElementById('previewArea').innerHTML = '';
+            
+            await loadData(); 
+            renderAds(); 
+        }
     }
 
+    // Вспомогательные функции для открытия и закрытия модальных окон
     function showModal(id) { document.getElementById(id).style.display = 'flex'; }
     function hideModal(id) { document.getElementById(id).style.display = 'none'; }
     
+    // Открытие карточки детального просмотра объявления со слайдером
     function openView(id) {
         const ad = ads.find(a => a.id == id);
+        if (!ad) return;
         const imgs = ad.images ? ad.images.split('|') : [];
         slideIdx = 0;
+        
         document.getElementById('viewContent').innerHTML = `
             <h2>${ad.title}</h2>
             <div class="slider-container">
                 ${imgs.map((i, idx) => `<img src="${i}" class="slider-img ${idx === 0 ? 'active' : ''}">`).join('')}
                 ${imgs.length > 1 ? `<button class="nav-btn" style="left:0" onclick="moveSlide(-1)">❮</button><button class="nav-btn" style="right:0" onclick="moveSlide(1)">❯</button>` : ''}
             </div>
-            <p>Цена: ${ad.price} грн</p><p>Описание: ${ad.desc}</p>
-            <button class="action-btn btn-chat" onclick="openChat('${ad.id}')">Написать</button>
-            <a href="tel:${ad.phone}" class="action-btn btn-call" style="text-decoration:none;">Позвонить</a>
-            <button onclick="hideModal('viewModal')" style="width:100%; margin-top:10px; background:none;">Закрыть</button>`;
+            <p style="margin-top:10px;"><b>Цена:</b> ${ad.price} грн</p>
+            <p style="margin-top:5px;"><b>Город:</b> ${ad.city || 'Не указан'}</p>
+            <p style="margin-top:5px;"><b>Порода/Вид:</b> ${ad.breed || 'Не указана'}</p>
+            <p style="margin-top:10px; border-top:1px solid #eee; padding-top:10px;">${ad.desc}</p>
+            <div style="display:flex; gap:10px; margin-top:15px;">
+                <button class="action-btn btn-chat" onclick="openChat('${ad.id}')">Написать</button>
+                <a href="tel:${ad.phone}" class="action-btn btn-call" style="text-decoration:none;">Позвонить</a>
+            </div>
+            <button onclick="hideModal('viewModal')" style="width:100%; margin-top:15px; background:none; border:none; color:#555; font-weight:bold;">Закрыть</button>`;
         showModal('viewModal');
     }
     
+    // Переключение слайдов картинок внутри объявления
     function moveSlide(n) {
         const s = document.querySelectorAll('.slider-img');
-        if(s.length > 0) { s[slideIdx].classList.remove('active'); slideIdx = (slideIdx + n + s.length) % s.length; s[slideIdx].classList.add('active'); }
+        if (s.length > 0) { 
+            s[slideIdx].classList.remove('active'); 
+            slideIdx = (slideIdx + n + s.length) % s.length; 
+            s[slideIdx].classList.add('active'); 
+        }
     }
 
+    // Открытие окна чата по конкретному объявлению
     async function openChat(id) {
-        activeAdId = id; hideModal('viewModal'); showModal('chatModal');
+        activeAdId = id; 
+        hideModal('viewModal'); 
+        showModal('chatModal');
         const { data } = await sb.from('messages').select('*').eq('ad_id', id).order('created_at', { ascending: true });
-        document.getElementById('messages').innerHTML = data?.map(m => `<div><b>${m.sender}:</b> ${m.text}</div>`).join('') || 'Нет сообщений';
+        document.getElementById('messages').innerHTML = data?.map(m => `
+            <div style="margin-bottom:8px; word-break:break-word;">
+                <b>${m.sender || 'Аноним'}:</b> ${m.text}
+            </div>`).join('') || '<div style="color:gray;">Нет сообщений. Начните диалог первым!</div>';
+        
+        // Автоматический скролл вниз чата
+        const box = document.getElementById('messages');
+        box.scrollTop = box.scrollHeight;
     }
 
+    // Отправка текстового сообщения в чат объявления
     async function sendMsg() {
-        const text = document.getElementById('msgText').value;
+        const text = document.getElementById('msgText').value.trim();
         if (!text) return;
-        await sb.from('messages').insert([{ ad_id: activeAdId, sender: localStorage.getItem('myChatName'), text: text }]);
-        document.getElementById('msgText').value = ''; openChat(activeAdId);
+        let name = localStorage.getItem('myChatName');
+        if (!name) {
+            name = prompt("Введите ваше имя для отображения в чате:");
+            if (!name) return;
+            localStorage.setItem('myChatName', name);
+        }
+        await sb.from('messages').insert([{ ad_id: activeAdId, sender: name, text: text }]);
+        document.getElementById('msgText').value = ''; 
+        openChat(activeAdId);
     }
+
+    // Просмотр списка всех объявлений, в которых пользователь писал сообщения
     async function showMyChats() {
         showModal('myChatsModal');
-        const { data } = await sb.from('messages').select('ad_id').eq('sender', localStorage.getItem('myChatName'));
-        document.getElementById('chatsList').innerHTML = [...new Set(data?.map(m => m.ad_id) || [])].map(id => {
+        let name = localStorage.getItem('myChatName');
+        if (!name) {
+            document.getElementById('chatsList').innerHTML = '<div style="padding:10px; color:gray;">Вы еще не общались в чатах</div>';
+            return;
+        }
+        const { data } = await sb.from('messages').select('ad_id').eq('sender', name);
+        const uniqueIds = [...new Set(data?.map(m => m.ad_id) || [])];
+        
+        document.getElementById('chatsList').innerHTML = uniqueIds.map(id => {
             const ad = ads.find(a => a.id == id);
-            return `<div style="padding:10px; border-bottom:1px solid #eee;" onclick="openChat('${id}')"><b>${ad ? ad.title : 'Удалено'}</b></div>`;
-        }).join('') || 'Нет чатов';
+            return `<div style="padding:12px; border-bottom:1px solid #eee; cursor:pointer; font-weight:bold;" onclick="hideModal('myChatsModal'); openChat('${id}')">
+                💬 ${ad ? ad.title : 'Удаленное объявление'}
+            </div>`;
+        }).join('') || '<div style="padding:10px; color:gray;">Нет активных диалогов</div>';
     }
+
+    // Показ модального окна со списком избранных объявлений
     async function showFavorites() {
         showModal('favModal');
+        if (myFavs.length === 0) {
+            document.getElementById('favList').innerHTML = '<div style="padding:10px; color:gray;">Список избранного пуст</div>';
+            return;
+        }
         document.getElementById('favList').innerHTML = myFavs.map(id => {
             const ad = ads.find(a => a.id == id);
-            return `<div style="padding:10px; border-bottom:1px solid #eee;">${ad ? ad.title : 'Удалено'}</div>`;
-        }).join('') || 'Список пуст';
+            return `<div style="padding:12px; border-bottom:1px solid #eee; cursor:pointer;" onclick="hideModal('favModal'); openView('${id}')">
+                ❤️ <b>${ad ? ad.title : 'Удалено'}</b> ${ad ? `— ${ad.price} грн` : ''}
+            </div>`;
+        }).join('');
     }
 </script>
 </body>
