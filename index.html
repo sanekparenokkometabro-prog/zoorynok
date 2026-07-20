@@ -435,19 +435,34 @@ function renderAds() {
         }).join('') || '<div style="padding:10px; color:gray;">Нет активных диалогов</div>';
     }
 
-    async function showFavorites() {
-        showModal('favModal');
-        if (myFavs.length === 0) {
-            document.getElementById('favList').innerHTML = '<div style="padding:10px; color:gray;">Список избранного пуст</div>';
-            return;
-        }
-        document.getElementById('favList').innerHTML = myFavs.map(id => {
-            const ad = ads.find(a => a.id == id);
-            return `<div style="padding:12px; border-bottom:1px solid #eee; cursor:pointer;" onclick="hideModal('favModal'); openView('${id}')">
-                ❤️ <b>${ad ? ad.title : 'Удалено'}</b> ${ad ? `— ${ad.price} грн` : ''}
-            </div>`;
-        }).join('');
+async function showFavorites() {
+    showModal('favModal');
+    
+    // 1. Сначала фильтруем myFavs, оставляя только те ID, которые реально существуют в нашем массиве ads
+    const validFavs = myFavs.filter(id => ads.some(a => a.id == id));
+    
+    // Если массив изменился (были удаленные), обновляем переменную
+    if (validFavs.length !== myFavs.length) {
+        myFavs = validFavs;
     }
+
+    if (myFavs.length === 0) {
+        document.getElementById('favList').innerHTML = '<div style="padding:10px; color:gray;">Список избранного пуст</div>';
+        return;
+    }
+
+    // 2. Рендерим только существующие объявления
+    document.getElementById('favList').innerHTML = myFavs.map(id => {
+        const ad = ads.find(a => a.id == id);
+        // Если ad вдруг не найден (на всякий случай), не выводим его
+        if (!ad) return '';
+        
+        return `<div style="padding:12px; border-bottom:1px solid #eee; cursor:pointer;" onclick="hideModal('favModal'); openView('${id}')">
+            ❤️ <b>${ad.title}</b> — ${ad.price} грн
+        </div>`;
+    }).join('');
+}
+    
 </script>
 </body>
 </html>
