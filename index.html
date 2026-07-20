@@ -162,6 +162,18 @@
 </div></div>
 
 <script>
+
+    function prepareFormWithCity() {
+    // Берем текущий выбранный город из фильтра
+    const currentCity = document.getElementById('cityFilter').value;
+    // Если что-то выбрано (не пустая строка), ставим этот город в форму
+    if (currentCity) {
+        document.getElementById('city').value = currentCity;
+    }
+    // Открываем саму форму
+    showModal('form');
+    }
+    
     const sb = supabase.createClient('https://qdesomzmhrghygzprftz.supabase.co', 'sb_publishable_ru6cRM3d9mYcDj7tjvAStQ_7rqIftg0');
     
     let ads = JSON.parse(localStorage.getItem('cached_ads') || '[]');
