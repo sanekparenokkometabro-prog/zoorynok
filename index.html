@@ -162,39 +162,33 @@
     const sb = supabase.createClient('https://qdesomzmhrghygzprftz.supabase.co', 'sb_publishable_ru6cRM3d9mYcDj7tjvAStQ_7rqIftg0');
     
     let ads = JSON.parse(localStorage.getItem('cached_ads') || '[]');
-    let myFavs = [], activeAdId = null, slideIdx = 0, activeCat = '', isMyMode = false, isLoaded = false;
+    let myFavs = [], activeAdId = null, slideIdx = 0, activeCat = '', isMyMode = false;
 
-    // ИСПРАВЛЕНИЕ: Заменен блок инициализации для стабильной загрузки
-    document.addEventListener('DOMContentLoaded', async () => {
-        await loadData();
-        isLoaded = true;
-        renderAds();
+    // ИСПРАВЛЕННАЯ ЛОГИКА ЗАГРУЗКИ:
+    document.addEventListener('DOMContentLoaded', () => {
+        renderAds(); // Показываем кэш сразу
+        loadData();  // Обновляем данные в фоне
         updateMyFavs();
     });
 
     async function loadData() {
         try {
             const { data, error } = await sb.from('ads').select('*').order('id', { ascending: false });
-            if (error) throw error;
             if (data) {
                 ads = data;
                 localStorage.setItem('cached_ads', JSON.stringify(data));
+                renderAds(); // Обновляем список, если данные пришли
             }
         } catch (err) {
             console.error("Ошибка загрузки данных из Supabase:", err);
-            // При ошибке данные останутся из localStorage (кэша)
         }
     }
 
     function renderAds() {
         const grid = document.getElementById('grid');
-        // Убрана проверка, блокирующая отображение до полной загрузки, чтобы кэш показывался сразу
-        
         const query = document.getElementById('searchInput').value.toLowerCase();
-        // Получаем значение фильтра города
         const cityFilterValue = document.getElementById('cityFilter').value;
 
-        // Фильтруем объявления по тексту, категории и городу
         let filtered = ads.filter(ad => {
             const matchesSearch = (ad.title?.toLowerCase().includes(query) || ad.desc?.toLowerCase().includes(query));
             const matchesCat = (activeCat === '' || ad.category === activeCat);
@@ -228,7 +222,6 @@
         isMyMode = false; 
         activeCat = ''; 
         document.getElementById('searchInput').value = ''; 
-        // Сброс фильтра города
         document.getElementById('cityFilter').value = ''; 
         renderAds(); 
     }
@@ -332,7 +325,6 @@
             alert("Успешно опубликовано!"); 
             hideModal('form'); 
             
-            // Очистка формы
             document.getElementById('title').value = '';
             document.getElementById('price').value = '';
             document.getElementById('desc').value = '';
@@ -414,4 +406,10 @@
         showModal('myChatsModal');
         let name = localStorage.getItem('myChatName');
         if (!name) {
-   
+            document.getElementById('chatsList').innerHTML = '<div style="padding:10px; color:gray;">Вы еще не общались в чатах</div>';
+            return;
+        }
+        const { data } = await sb.from('messages').select('ad_id').eq('sender', name);
+        const uniqueIds = [...new Set(data?.map(m => m.ad_id) || [])];
+        
+        document
