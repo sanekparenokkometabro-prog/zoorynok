@@ -11,7 +11,6 @@
         header { background: #002f34; color: white; padding: 15px; text-align: center; }
         .search-box { padding: 10px; background: white; }
         .search-input { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 20px; }
-        /* Добавлено для селекта городов */
         .city-select { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 20px; margin-top: 10px; }
         .categories { display: flex; gap: 10px; padding: 10px; overflow-x: auto; background: white; }
         .cat-btn { padding: 8px 15px; border: 1px solid #002f34; border-radius: 20px; cursor: pointer; white-space: nowrap; }
@@ -38,12 +37,32 @@
 
 <div class="search-box">
     <input type="text" id="searchInput" class="search-input" placeholder="Поиск..." oninput="renderAds()">
-    <!-- Добавлен селект выбора города -->
     <select id="cityFilter" class="city-select" onchange="renderAds()">
         <option value="">Все города</option>
         <option value="Киев">Киев</option>
         <option value="Кривой Рог">Кривой Рог</option>
         <option value="Харьков">Харьков</option>
+        <option value="Днепр">Днепр</option>
+        <option value="Одесса">Одесса</option>
+        <option value="Запорожье">Запорожье</option>
+        <option value="Львов">Львов</option>
+        <option value="Николаев">Николаев</option>
+        <option value="Винница">Винница</option>
+        <option value="Чернигов">Чернигов</option>
+        <option value="Полтава">Полтава</option>
+        <option value="Черкассы">Черкассы</option>
+        <option value="Хмельницкий">Хмельницкий</option>
+        <option value="Черновцы">Черновцы</option>
+        <option value="Житомир">Житомир</option>
+        <option value="Сумы">Сумы</option>
+        <option value="Ровно">Ровно</option>
+        <option value="Ивано-Франковск">Ивано-Франковск</option>
+        <option value="Кропивницкий">Кропивницкий</option>
+        <option value="Тернополь">Тернополь</option>
+        <option value="Луцк">Луцк</option>
+        <option value="Ужгород">Ужгород</option>
+        <option value="Мариуполь">Мариуполь</option>
+        <option value="Кременчуг">Кременчуг</option>
     </select>
 </div>
 
@@ -65,7 +84,6 @@
     <button onclick="manageMyAds()" style="background:none; border:none; color:white; font-size:24px;">👤</button>
 </div>
 
-<!-- Модальное окно формы подачи объявления -->
 <div id="form" class="modal"><div class="content">
     <h2>Новое объявление</h2>
     <input id="title" class="field" placeholder="Название">
@@ -73,15 +91,15 @@
     <label for="city">Город:</label>
     <input list="cities" id="city" class="field" placeholder="Выберите или введите город...">
     <datalist id="cities">
-        <option value="Киев">
-        <option value="Кривой Рог">
-        <option value="Харьков">
-        <option value="Одесса">
-        <option value="Днепр">
+        <option value="Киев"><option value="Кривой Рог"><option value="Харьков"><option value="Днепр"><option value="Одесса">
+        <option value="Запорожье"><option value="Львов"><option value="Николаев"><option value="Винница"><option value="Чернигов">
+        <option value="Полтава"><option value="Черкассы"><option value="Хмельницкий"><option value="Черновцы"><option value="Житомир">
+        <option value="Сумы"><option value="Ровно"><option value="Ивано-Франковск"><option value="Кропивницкий"><option value="Тернополь">
+        <option value="Луцк"><option value="Ужгород"><option value="Мариуполь"><option value="Кременчуг">
     </datalist>
 
     <input id="price" class="field" type="number" placeholder="Цена">
-    <input id="breed" class="field" placeholder="Порода">
+    <input id="breed" class="field" placeholder="Порода / Кросс">
     <input id="phone" class="field" type="tel" placeholder="Ваш номер">
     <select id="category" class="field">
         <option>Веттовары</option>
@@ -97,7 +115,6 @@
     <button onclick="hideModal('form')" style="width:100%; margin-top:10px; background:none; border:none; color:red;">Отмена</button>
 </div></div>
 
-<!-- Окна для просмотра, чатов и избранного -->
 <div id="viewModal" class="modal"><div class="content" id="viewContent"></div></div>
 
 <div id="chatModal" class="modal"><div class="content">
@@ -131,9 +148,7 @@
     });
 
     async function initApp() {
-        // Запускаем загрузку
         await loadData();
-        // ВАЖНО: всегда переключаем флаг, даже если ошибка
         isLoaded = true;
         renderAds();
         updateMyFavs();
@@ -154,8 +169,6 @@
 
     function renderAds() {
         const grid = document.getElementById('grid');
-        // Убрали проверку на isLoaded внутри, чтобы сразу рисовать кэш
-        
         const query = document.getElementById('searchInput').value.toLowerCase();
         const cityVal = document.getElementById('cityFilter').value;
         
@@ -205,7 +218,7 @@
         if (!confirm("Вы действительно хотите удалить это объявление?")) return;
         const { error } = await sb.from('ads').delete().eq('id', adId);
         if (error) {
-            alert("Не удалось удалить объявление. Проверьте права.");
+            alert("Не удалось удалить объявление.");
         } else {
             ads = ads.filter(a => a.id != adId);
             renderAds();
@@ -213,7 +226,7 @@
     }
 
     function manageMyAds() {
-        const phone = localStorage.getItem('myPhone') || prompt("Введите ваш номер телефона для авторизации объявлений:");
+        const phone = localStorage.getItem('myPhone') || prompt("Введите ваш номер телефона для авторизации:");
         if (!phone) return;
         localStorage.setItem('myPhone', phone);
         isMyMode = true; 
@@ -230,7 +243,7 @@
     }
 
     async function toggleFavorite(adId) {
-        let name = localStorage.getItem('myChatName') || prompt("Введите ваше имя для работы с избранным:");
+        let name = localStorage.getItem('myChatName') || prompt("Введите ваше имя:");
         if (!name) return; 
         localStorage.setItem('myChatName', name);
         const idNum = Number(adId);
@@ -260,12 +273,9 @@
     async function saveAd() {
         const btn = document.getElementById('saveBtn'); 
         btn.disabled = true;
-        const phone = document.getElementById('phone').value;
-        localStorage.setItem('myPhone', phone);
         
         const files = document.getElementById('photoInput').files;
         let imgs = [];
-        
         for (let f of files) {
             let b64 = await new Promise(r => { 
                 let reader = new FileReader(); 
@@ -277,7 +287,7 @@
         
         const adData = { 
             title: document.getElementById('title').value, 
-            phone: phone, 
+            phone: document.getElementById('phone').value, 
             price: document.getElementById('price').value, 
             desc: document.getElementById('desc').value, 
             category: document.getElementById('category').value, 
@@ -315,6 +325,7 @@
             </div>
             <p>Цена: ${ad.price} грн</p>
             <p>Город: ${ad.city || 'Не указан'}</p>
+            <p>Порода / Кросс: ${ad.breed || 'Не указана'}</p>
             <p>${ad.desc}</p>
             <div style="display:flex; gap:10px; margin-top:15px;">
                 <button class="action-btn btn-chat" onclick="openChat('${ad.id}')">Написать</button>
@@ -363,7 +374,7 @@
         const uniqueIds = [...new Set(data?.map(m => m.ad_id) || [])];
         document.getElementById('chatsList').innerHTML = uniqueIds.map(id => {
             const ad = ads.find(a => a.id == id);
-            return `<div onclick="hideModal('myChatsModal'); openChat('${id}')">💬 ${ad ? ad.title : 'Удалено'}</div>`;
+            return `<div onclick="hideModal('myChatsModal'); openChat('${id}')" style="padding:10px; border-bottom:1px solid #eee;">💬 ${ad ? ad.title : 'Удалено'}</div>`;
         }).join('');
     }
 
@@ -371,7 +382,7 @@
         showModal('favModal');
         document.getElementById('favList').innerHTML = myFavs.map(id => {
             const ad = ads.find(a => a.id == id);
-            return ad ? `<div onclick="hideModal('favModal'); openView('${id}')">❤️ ${ad.title}</div>` : '';
+            return ad ? `<div onclick="hideModal('favModal'); openView('${id}')" style="padding:10px; border-bottom:1px solid #eee;">❤️ ${ad.title}</div>` : '';
         }).join('');
     }
 </script>
