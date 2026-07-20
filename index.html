@@ -394,22 +394,37 @@ function renderAds() {
             s[slideIdx].classList.add('active'); 
         }
     }
-
     async function openChat(adId) {
-    console.log("Открытие чата для:", adId);
+    console.log("Пытаюсь открыть чат, ID:", adId);
     
-    // 1. Закрываем окно списка
+    // 1. Закрываем модальное окно списка чатов
     closeModal('myChatModal');
     
-    // 2. Показываем индикатор загрузки внутри самого чата (если есть div)
     const chatContainer = document.getElementById('chatMessages');
-    if (chatContainer) chatContainer.innerHTML = 'Загрузка сообщений...';
+    if (!chatContainer) return;
 
-    // 3. ТУТ ДОЛЖЕН БЫТЬ ТВОЙ КОД ЗАГРУЗКИ СООБЩЕНИЙ
-    // Если он у тебя ниже, убедись, что нет бесконечного цикла await
-    
-    // Если код загрузки есть, раскомментируй его здесь или добавь ниже
+    chatContainer.innerHTML = 'Загрузка сообщений...';
+
+    // 2. Загружаем сообщения для этого объявления из базы Supabase
+    const { data: messages, error } = await sb.from('messages')
+        .select('*')
+        .eq('ad_id', adId)
+        .order('created_at', { ascending: true });
+
+    if (error) {
+        chatContainer.innerHTML = 'Ошибка загрузки сообщений';
+        console.error(error);
+        return;
     }
+
+    // 3. Выводим сообщения на экран
+    chatContainer.innerHTML = messages.map(m => `
+        <div style="margin: 8px; padding: 8px; background: #f1f1f1; border-radius: 8px;">
+            <strong>${m.sender}:</strong> ${m.text}
+        </div>
+    `).join('') || '<div style="color: gray; text-align: center;">Нет сообщений</div>';
+    }
+        
     
     async function sendMsg() {
         const text = document.getElementById('msgText').value.trim();
@@ -437,9 +452,9 @@ function renderAds() {
         document.getElementById('chatsList').innerHTML = uniqueIds.map(id => {
     const ad = ads.find(a => a.id == id);
     // Добавляем вызов markAsRead и openChat прямо в onClick
-    return `<div onclick="openChat('${id}'); markAsRead('${id}');" style="padding:12px; border-bottom:1px solid #eee; cursor:pointer; font-weight:bold;">
-        ${ad ? ad.title : 'Удаленное объявление'}
-    </div>`;
+    return `<div onclick="markAsRead('${id}'); openChat('${id}');" style="padding:12px; border-bottom:1px solid #eee; cursor:pointer; font-weight:bold;">
+    💬 ${ad ? ad.title : 'Удаленное объявление'}
+</div>`;           
 }).join('') || '<div style="padding:10px; color:gray;">Нет активных диалогов</div>';
         
 async function showFavorites() {
