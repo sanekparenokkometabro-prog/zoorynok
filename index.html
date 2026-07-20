@@ -48,6 +48,21 @@
         <option value="Днепр">Днепр</option>
         <option value="Запорожье">Запорожье</option>
         <option value="Львов">Львов</option>
+        <option value="Николаев">Николаев</option>
+        <option value="Винница">Винница</option>
+        <option value="Чернигов">Чернигов</option>
+        <option value="Полтава">Полтава</option>
+        <option value="Черкассы">Черкассы</option>
+        <option value="Хмельницкий">Хмельницкий</option>
+        <option value="Черновцы">Черновцы</option>
+        <option value="Житомир">Житомир</option>
+        <option value="Сумы">Сумы</option>
+        <option value="Ровно">Ровно</option>
+        <option value="Ивано-Франковск">Ивано-Франковск</option>
+        <option value="Кропивницкий">Кропивницкий</option>
+        <option value="Тернополь">Тернополь</option>
+        <option value="Луцк">Луцк</option>
+        <option value="Ужгород">Ужгород</option>
     </select>
 </div>
 
@@ -149,24 +164,13 @@
     let ads = JSON.parse(localStorage.getItem('cached_ads') || '[]');
     let myFavs = [], activeAdId = null, slideIdx = 0, activeCat = '', isMyMode = false, isLoaded = false;
 
-    document.addEventListener('DOMContentLoaded', () => {
-        initApp();
-    });
-
-    async function initApp() {
-        const timer = setTimeout(() => {
-            if (!isLoaded) {
-                document.getElementById('grid').innerHTML = '<p style="padding:20px; text-align:center;">Ошибка подключения к базе. Проверьте настройки RLS в Supabase.</p>';
-            }
-        }, 8000);
-
+    // ИСПРАВЛЕНИЕ: Заменен блок инициализации для стабильной загрузки
+    document.addEventListener('DOMContentLoaded', async () => {
         await loadData();
-        clearTimeout(timer);
-        
         isLoaded = true;
         renderAds();
         updateMyFavs();
-    }
+    });
 
     async function loadData() {
         try {
@@ -178,13 +182,14 @@
             }
         } catch (err) {
             console.error("Ошибка загрузки данных из Supabase:", err);
+            // При ошибке данные останутся из localStorage (кэша)
         }
     }
 
     function renderAds() {
         const grid = document.getElementById('grid');
-        if (!isLoaded && ads.length === 0) return;
-
+        // Убрана проверка, блокирующая отображение до полной загрузки, чтобы кэш показывался сразу
+        
         const query = document.getElementById('searchInput').value.toLowerCase();
         // Получаем значение фильтра города
         const cityFilterValue = document.getElementById('cityFilter').value;
@@ -409,12 +414,4 @@
         showModal('myChatsModal');
         let name = localStorage.getItem('myChatName');
         if (!name) {
-            document.getElementById('chatsList').innerHTML = '<div style="padding:10px; color:gray;">Вы еще не общались в чатах</div>';
-            return;
-        }
-        const { data } = await sb.from('messages').select('ad_id').eq('sender', name);
-        const uniqueIds = [...new Set(data?.map(m => m.ad_id) || [])];
-        
-        document.getElementById('chatsList').innerHTML = uniqueIds.map(id => {
-            const ad = ads.find(a => a.id == id);
-            return `<div style="padding:12px; border-bottom:1px solid #eee; cursor:pointer; font-weight:bold;" onclick="hideModal('myC
+   
