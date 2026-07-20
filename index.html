@@ -11,6 +11,9 @@
         header { background: #002f34; color: white; padding: 15px; text-align: center; }
         .search-box { padding: 10px; background: white; }
         .search-input { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 20px; }
+        /* Добавлено для выбора города */
+        .filter-city { padding: 10px; background: white; }
+        .city-select { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 20px; }
         .categories { display: flex; gap: 10px; padding: 10px; overflow-x: auto; background: white; }
         .cat-btn { padding: 8px 15px; border: 1px solid #002f34; border-radius: 20px; cursor: pointer; white-space: nowrap; }
         .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 15px; }
@@ -36,6 +39,18 @@
 
 <div class="search-box">
     <input type="text" id="searchInput" class="search-input" placeholder="Поиск..." oninput="renderAds()">
+</div>
+
+<!-- Добавлен селект выбора города -->
+<div class="filter-city">
+    <select id="cityFilter" class="city-select" onchange="renderAds()">
+        <option value="">Все города</option>
+        <option value="Киев">Киев</option>
+        <option value="Кривой Рог">Кривой Рог</option>
+        <option value="Харьков">Харьков</option>
+        <option value="Одесса">Одесса</option>
+        <option value="Днепр">Днепр</option>
+    </select>
 </div>
 
 <div class="categories">
@@ -171,7 +186,15 @@
         if (!isLoaded && ads.length === 0) return;
 
         const query = document.getElementById('searchInput').value.toLowerCase();
-        let filtered = ads.filter(ad => (ad.title?.toLowerCase().includes(query) || ad.desc?.toLowerCase().includes(query)) && (activeCat === '' || ad.category === activeCat));
+        // Берем значение выбранного города
+        const cityFilter = document.getElementById('cityFilter').value;
+        
+        // Фильтруем по поиску, категории и городу одновременно
+        let filtered = ads.filter(ad => 
+            (ad.title?.toLowerCase().includes(query) || ad.desc?.toLowerCase().includes(query)) && 
+            (activeCat === '' || ad.category === activeCat) &&
+            (cityFilter === '' || ad.city === cityFilter)
+        );
         
         if (isMyMode) {
             const myPhone = localStorage.getItem('myPhone');
@@ -185,12 +208,12 @@
 
         grid.innerHTML = filtered.map(ad => `
             <div class="card">
-                <div onclick="openView(${ad.id})">
+                <div onclick="openView('${ad.id}')">
                     <img src="${ad.images ? ad.images.split('|')[0] : ''}" loading="lazy">
                     <b>${ad.title}</b><br><small>${ad.price} грн</small>
                 </div>
-                <button onclick="toggleFavorite(${ad.id})" style="margin-top:5px; width:100%; border:none; background:#eee; color: ${myFavs.includes(Number(ad.id)) ? 'red' : 'gray'}">♥</button>
-                ${isMyMode ? `<button onclick="deleteAd(${ad.id})" style="margin-top:5px; width:100%; border:none; background:#ffeded; color:red;">Удалить</button>` : ''}
+                <button onclick="toggleFavorite('${ad.id}')" style="margin-top:5px; width:100%; border:none; background:#eee; color: ${myFavs.includes(Number(ad.id)) ? 'red' : 'gray'}">♥</button>
+                ${isMyMode ? `<button onclick="deleteAd('${ad.id}')" style="margin-top:5px; width:100%; border:none; background:#ffeded; color:red;">Удалить</button>` : ''}
             </div>`).join('');
     }
 
@@ -198,6 +221,7 @@
         isMyMode = false; 
         activeCat = ''; 
         document.getElementById('searchInput').value = ''; 
+        document.getElementById('cityFilter').value = ''; // Сброс города
         renderAds(); 
     }
 
@@ -334,7 +358,7 @@
             <p style="margin-top:5px;"><b>Порода/Вид:</b> ${ad.breed || 'Не указана'}</p>
             <p style="margin-top:10px; border-top:1px solid #eee; padding-top:10px;">${ad.desc}</p>
             <div style="display:flex; gap:10px; margin-top:15px;">
-                <button class="action-btn btn-chat" onclick="openChat(${ad.id})">Написать</button>
+                <button class="action-btn btn-chat" onclick="openChat('${ad.id}')">Написать</button>
                 <a href="tel:${ad.phone}" class="action-btn btn-call" style="text-decoration:none;">Позвонить</a>
             </div>
             <button onclick="hideModal('viewModal')" style="width:100%; margin-top:15px; background:none; border:none; color:#555; font-weight:bold;">Закрыть</button>`;
@@ -390,7 +414,7 @@
         
         document.getElementById('chatsList').innerHTML = uniqueIds.map(id => {
             const ad = ads.find(a => a.id == id);
-            return `<div style="padding:12px; border-bottom:1px solid #eee; cursor:pointer; font-weight:bold;" onclick="hideModal('myChatsModal'); openChat(${id})">
+            return `<div style="padding:12px; border-bottom:1px solid #eee; cursor:pointer; font-weight:bold;" onclick="hideModal('myChatsModal'); openChat('${id}')">
                 💬 ${ad ? ad.title : 'Удаленное объявление'}
             </div>`;
         }).join('') || '<div style="padding:10px; color:gray;">Нет активных диалогов</div>';
@@ -398,17 +422,4 @@
 
     async function showFavorites() {
         showModal('favModal');
-        if (myFavs.length === 0) {
-            document.getElementById('favList').innerHTML = '<div style="padding:10px; color:gray;">Список избранного пуст</div>';
-            return;
-        }
-        document.getElementById('favList').innerHTML = myFavs.map(id => {
-            const ad = ads.find(a => a.id == id);
-            return `<div style="padding:12px; border-bottom:1px solid #eee; cursor:pointer;" onclick="hideModal('favModal'); openView(${id})">
-                ❤️ <b>${ad ? ad.title : 'Удалено'}</b> ${ad ? `— ${ad.price} грн` : ''}
-            </div>`;
-        }).join('');
-    }
-</script>
-</body>
-</html>
+        
