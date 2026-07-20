@@ -28,37 +28,6 @@
         .slider-img { width: 100%; height: 250px; object-fit: cover; display: none; }
         .slider-img.active { display: block; }
         .nav-btn { position: absolute; top: 50%; transform: translateY(-50%); background: rgba(0,0,0,0.5); color: white; border: none; padding: 10px; cursor: pointer; }
-
-   <!-- Добавленный фильтр городов -->
-    <select id="cityFilter" class="search-input" onchange="renderAds()">
-        <option value="">Все города</option>
-        <option value="Киев">Киев</option>
-        <option value="Кривой Рог">Кривой Рог</option>
-        <option value="Лозоватка">Лозоватка</option>
-        <option value="Марьяновка">Марьяновка</option>
-        <option value="Харьков">Харьков</option>
-        <option value="Одесса">Одесса</option>
-        <option value="Днепр">Днепр</option>
-        <option value="Запорожье">Запорожье</option>
-        <option value="Львов">Львов</option>
-        <option value="Николаев">Николаев</option>
-        <option value="Винница">Винница</option>
-        <option value="Чернигов">Чернигов</option>
-        <option value="Полтава">Полтава</option>
-        <option value="Черкассы">Черкассы</option>
-        <option value="Хмельницкий">Хмельницкий</option>
-        <option value="Черновцы">Черновцы</option>
-        <option value="Житомир">Житомир</option>
-        <option value="Сумы">Сумы</option>
-        <option value="Ровно">Ровно</option>
-        <option value="Ивано-Франковск">Ивано-Франковск</option>
-        <option value="Кропивницкий">Кропивницкий</option>
-        <option value="Тернополь">Тернополь</option>
-        <option value="Луцк">Луцк</option>
-        <option value="Ужгород">Ужгород</option>
-    </select>
-</div>
-
     </style>
 </head>
 <body>
@@ -421,4 +390,25 @@
         
         document.getElementById('chatsList').innerHTML = uniqueIds.map(id => {
             const ad = ads.find(a => a.id == id);
-            return `<div style="padd
+            return `<div style="padding:12px; border-bottom:1px solid #eee; cursor:pointer; font-weight:bold;" onclick="hideModal('myChatsModal'); openChat('${id}')">
+                💬 ${ad ? ad.title : 'Удаленное объявление'}
+            </div>`;
+        }).join('') || '<div style="padding:10px; color:gray;">Нет активных диалогов</div>';
+    }
+
+    async function showFavorites() {
+        showModal('favModal');
+        if (myFavs.length === 0) {
+            document.getElementById('favList').innerHTML = '<div style="padding:10px; color:gray;">Список избранного пуст</div>';
+            return;
+        }
+        document.getElementById('favList').innerHTML = myFavs.map(id => {
+            const ad = ads.find(a => a.id == id);
+            return `<div style="padding:12px; border-bottom:1px solid #eee; cursor:pointer;" onclick="hideModal('favModal'); openView('${id}')">
+                ❤️ <b>${ad ? ad.title : 'Удалено'}</b> ${ad ? `— ${ad.price} грн` : ''}
+            </div>`;
+        }).join('');
+    }
+</script>
+</body>
+</html>
