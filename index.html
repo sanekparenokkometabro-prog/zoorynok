@@ -178,11 +178,15 @@
         await loadData();
         clearTimeout(timer);
         
-        isLoaded = true;
-        renderAds();
-        updateMyFavs();
+            isLoaded = true;
+    renderAds();
+    updateMyFavs();
+    
+    // Новые строки для индикатора:
+    checkNewMessages();
+    setInterval(checkNewMessages, 30000); // Проверка каждые 30 секунд
     }
-
+    
     async function loadData() {
         try {
             const { data, error } = await sb.from('ads').select('*').order('id', { ascending: false });
@@ -465,7 +469,31 @@ async function showFavorites() {
         </div>`;
     }).join('');
 }
+
+    async function checkNewMessages() {
+    const name = localStorage.getItem('myChatName');
+    const myPhone = localStorage.getItem('myPhone');
+    if (!name || !myPhone) return;
+
+    // Получаем ID наших объявлений
+    const { data: myAds } = await sb.from('ads').select('id').eq('phone', myPhone);
+    if (!myAds || myAds.length === 0) return;
+
+    const myAdIds = myAds.map(a => a.id);
+
+    // Проверяем наличие сообщений, которые написали не мы
+    const { data: messages } = await sb.from('messages')
+        .select('id')
+        .in('ad_id', myAdIds)
+        .neq('sender', name); 
+
+    const badge = document.getElementById('chatBadge');
+    if (badge) {
+        badge.style.display = (messages && messages.length > 0) ? 'block' : 'none';
+    }
+    }
     
+
 </script>
 </body>
 </html>
