@@ -58,6 +58,7 @@
         <option value="Ровно">Ровно</option>
         <option value="Ивано-Франковск">Ивано-Франковск</option>
         <option value="Кропивницкий">Кропивницкий</option>
+        <option value="Кропивницкий">Кропивницкий</option>
         <option value="Тернополь">Тернополь</option>
         <option value="Луцк">Луцк</option>
         <option value="Ужгород">Ужгород</option>
@@ -82,6 +83,7 @@
     <button onclick="showMyChats()" style="background:none; border:none; color:white; font-size:24px; position:relative;">
     💬<span id="chatBadge" style="display:none; position:absolute; top:0; right:0; background:red; width:10px; height:10px; border-radius:50%;"></span>
     </button>
+    
     <button onclick="manageMyAds()" style="background:none; border:none; color:white; font-size:24px;">👤</button>
 </div>
 
@@ -177,15 +179,11 @@
         await loadData();
         clearTimeout(timer);
         
-            isLoaded = true;
-    renderAds();
-    updateMyFavs();
-    
-    // Новые строки для индикатора:
-    checkNewMessages();
-    setInterval(checkNewMessages, 30000); // Проверка каждые 30 секунд
+        isLoaded = true;
+        renderAds();
+        updateMyFavs();
     }
-    
+
     async function loadData() {
         try {
             const { data, error } = await sb.from('ads').select('*').order('id', { ascending: false });
@@ -395,29 +393,20 @@ function renderAds() {
         }
     }
 
-    async function openChat(adId) {
-    console.log("Клик прошел! ID объявления:", adId);
-    alert("Чат для ID: " + adId); // Это окно должно выскочить на экране
-    
-    // Если этот alert не появляется, значит, кнопка в HTML вообще не вызывает функцию
+    async function openChat(id) {
+        activeAdId = id; 
+        hideModal('viewModal'); 
+        showModal('chatModal');
+        const { data } = await sb.from('messages').select('*').eq('ad_id', id).order('created_at', { ascending: true });
+        document.getElementById('messages').innerHTML = data?.map(m => `
+            <div style="margin-bottom:8px; word-break:break-word;">
+                <b>${m.sender || 'Аноним'}:</b> ${m.text}
+            </div>`).join('') || '<div style="color:gray;">Нет сообщений. Начните диалог первым!</div>';
+        
+        const box = document.getElementById('messages');
+        box.scrollTop = box.scrollHeight;
     }
-    
-        // Если сообщения есть — выводим, если нет — пишем, что пусто
-        if (messages && messages.length > 0) {
-            chatContainer.innerHTML = messages.map(m => `
-                <div style="padding: 8px; margin: 5px; background: #eee; border-radius: 5px;">
-                    <b>${m.sender}:</b> ${m.text}
-                </div>
-            `).join('');
-        } else {
-            chatContainer.innerHTML = '<div style="color: gray; text-align: center; padding: 20px;">Нет сообщений в этом чате</div>';
-        }
-    } catch (err) {
-        console.error("Сетевая ошибка:", err);
-        chatContainer.innerHTML = 'Ошибка соединения с базой';
-    }
-    }
-    
+
     async function sendMsg() {
         const text = document.getElementById('msgText').value.trim();
         if (!text) return;
@@ -432,7 +421,7 @@ function renderAds() {
         openChat(activeAdId);
     }
 
-    async function showMyChats() {
+async function showMyChats() {
         showModal('myChatsModal');
         let name = localStorage.getItem('myChatName');
         if (!name) {
@@ -441,13 +430,15 @@ function renderAds() {
         }
         const { data } = await sb.from('messages').select('ad_id').eq('sender', name);
         const uniqueIds = [...new Set(data?.map(m => m.ad_id) || [])];
+        
         document.getElementById('chatsList').innerHTML = uniqueIds.map(id => {
-    const ad = ads.find(a => a.id == id);
-    // Добавляем вызов markAsRead и openChat прямо в onClick
-    return `<div onclick="openChat('${id}')" style="padding:12px; border-bottom:1px solid #eee; cursor:pointer; font-weight:bold;">
-    💬 ${ad ? ad.title : 'Удаленное объявление'}
-</div>`;
-            
+            const ad = ads.find(a => a.id == id);
+            return `<div style="padding:12px; border-bottom:1px solid #eee; cursor:pointer; font-weight:bold;" onclick="hideModal('myChatsModal'); openChat('${id}')">
+                💬 ${ad ? ad.title : 'Удаленное объявление'}
+            </div>`;
+        }).join('') || '<div style="padding:10px; color:gray;">Нет активных диалогов</div>';
+    }
+
 async function showFavorites() {
     showModal('favModal');
     
@@ -475,23 +466,7 @@ async function showFavorites() {
         </div>`;
     }).join('');
 }
-
-async function markAsRead(adId) {
-    // 1. Помечаем сообщения как прочитанные в базе
-    // Если у тебя нет поля is_read, просто удали эту часть, 
-    // индикатор все равно обновится через checkNewMessages ниже
-    await sb.from('messages')
-        .update({ is_read: true })
-        .eq('ad_id', adId)
-        .neq('sender', localStorage.getItem('myChatName'));
     
-    // 2. Сразу обновляем состояние индикатора
-    await checkNewMessages();
-    
-    // 3. НИЧЕГО НЕ БЛОКИРУЕМ, просто даем приложению дальше открыть чат
-    console.log("Сообщения прочитаны, открываем чат...");
-}
-          
 </script>
 </body>
 </html>
