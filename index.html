@@ -65,7 +65,7 @@
     <div class="cat-btn" onclick="filterCat('Домашние питомцы')">Питомцы</div>
 </div>
 
-<div class="grid" id="grid"><p style="padding:20px; text-align:center;">Загрузка данных...</p></div>
+<div class="grid" id="grid"><p style="padding:20px; text-align:center;">Загрузка...</p></div>
 
 <div class="bottom-nav">
     <button onclick="resetApp()" style="background:none; border:none; color:white; font-size:24px;">🏠</button>
@@ -83,21 +83,14 @@
     <label for="city">Город:</label>
     <input list="cities" id="city" class="field" placeholder="Выберите или введите город...">
     <datalist id="cities">
-        <option value="Киев">
-        <option value="Кривой Рог">
-        <option value="Харьков">
-        <option value="Одесса">
-        <option value="Днепр">
+        <option value="Киев"><option value="Кривой Рог"><option value="Харьков"><option value="Одесса"><option value="Днепр">
     </datalist>
 
     <input id="price" class="field" type="number" placeholder="Цена">
     <input id="breed" class="field" placeholder="Порода">
     <input id="phone" class="field" type="tel" placeholder="Ваш номер">
     <select id="category" class="field">
-        <option>Веттовары</option>
-        <option>Комбикорма</option>
-        <option>Сельхозживотные</option>
-        <option>Домашние питомцы</option>
+        <option>Веттовары</option><option>Комбикорма</option><option>Сельхозживотные</option><option>Домашние питомцы</option>
     </select>
     <textarea id="desc" class="field" placeholder="Описание"></textarea>
     <label for="photoInput" style="display:block; padding:10px; background:#e0e0e0; border-radius:5px; text-align:center; cursor:pointer;">📸 Выбрать фото</label>
@@ -107,6 +100,7 @@
     <button onclick="hideModal('form')" style="width:100%; margin-top:10px; background:none; border:none; color:red;">Отмена</button>
 </div></div>
 
+<!-- Окна для просмотра, чатов и избранного -->
 <div id="viewModal" class="modal"><div class="content" id="viewContent"></div></div>
 <div id="chatModal" class="modal"><div class="content">
     <h3>Чат</h3>
@@ -121,13 +115,12 @@
 <script>
     const sb = supabase.createClient('https://qdesomzmhrghygzprftz.supabase.co', 'sb_publishable_ru6cRM3d9mYcDj7tjvAStQ_7rqIftg0');
     
-    // Сначала берем то, что есть в кэше, чтобы экран не был пустым
     let ads = JSON.parse(localStorage.getItem('cached_ads') || '[]');
     let myFavs = [], activeAdId = null, slideIdx = 0, activeCat = '', isMyMode = false;
 
     document.addEventListener('DOMContentLoaded', () => {
-        renderAds(); // Рендерим кэш сразу
-        initApp();   // И параллельно обновляем из базы
+        renderAds(); 
+        initApp();
     });
 
     async function initApp() {
@@ -143,9 +136,7 @@
                 ads = data;
                 localStorage.setItem('cached_ads', JSON.stringify(data));
             }
-        } catch (err) {
-            console.error("Supabase error:", err);
-        }
+        } catch (err) { console.error(err); }
     }
 
     function renderAds() {
@@ -173,7 +164,7 @@
                     <b>${ad.title}</b><br><small>${ad.price} грн</small>
                 </div>
                 <button onclick="toggleFavorite('${ad.id}')" style="margin-top:5px; width:100%; border:none; background:#eee; color: ${myFavs.includes(Number(ad.id)) ? 'red' : 'gray'}">♥</button>
-            </div>`).join('') : '<p style="padding:20px; text-align:center;">Объявлений нет</p>';
+            </div>`).join('') : '<p style="padding:20px; text-align:center;">Объявлений пока нет</p>';
     }
 
     function resetApp() { 
@@ -184,23 +175,144 @@
         renderAds(); 
     }
 
-    function filterCat(cat) { activeCat = cat; document.getElementById('filterCat').value = cat; renderAds(); }
-    
-    // ... [Остальные ваши функции: saveAd, toggleFavorite, openView, openChat и т.д. остаются прежними] ...
+    function filterCat(cat) { 
+        activeCat = cat; 
+        document.getElementById('filterCat').value = cat;
+        isMyMode = false; 
+        renderAds(); 
+    }
+
+    async function deleteAd(adId) {
+        if (!confirm("Вы действительно хотите удалить это объявление?")) return;
+        const { error } = await sb.from('ads').delete().eq('id', adId);
+        if (error) alert("Ошибка удаления");
+        else { ads = ads.filter(a => a.id != adId); renderAds(); }
+    }
+
+    function manageMyAds() {
+        const phone = localStorage.getItem('myPhone') || prompt("Введите ваш номер телефона:");
+        if (!phone) return;
+        localStorage.setItem('myPhone', phone);
+        isMyMode = true; 
+        renderAds();
+    }
+
+    async function updateMyFavs() {
+        const name = localStorage.getItem('myChatName');
+        if (name) {
+            const { data } = await sb.from('favorites').select('ad_id').eq('user_name', name);
+            myFavs = data?.map(f => f.ad_id) || [];
+            renderAds();
+        }
+    }
+
+    async function toggleFavorite(adId) {
+        let name = localStorage.getItem('myChatName') || prompt("Введите ваше имя:");
+        if (!name) return; 
+        localStorage.setItem('myChatName', name);
+        const idNum = Number(adId);
+        const isFav = myFavs.includes(idNum);
+        
+        if (isFav) {
+            const { data } = await sb.from('favorites').select('id').eq('ad_id', idNum).eq('user_name', name);
+            if (data?.length) await sb.from('favorites').delete().eq('id', data[0].id);
+        } else {
+            await sb.from('favorites').insert([{ ad_id: idNum, user_name: name }]);
+        }
+        updateMyFavs();
+    }
+
+    function previewPhotos() {
+        const input = document.getElementById('photoInput'), preview = document.getElementById('previewArea');
+        preview.innerHTML = '';
+        for (let file of input.files) {
+            const reader = new FileReader();
+            reader.onload = (e) => { 
+                preview.innerHTML += `<img src="${e.target.result}" style="width:60px; height:60px; object-fit:cover; border-radius:5px;">`; 
+            }
+            reader.readAsDataURL(file);
+        }
+    }
+
+    async function saveAd() {
+        const btn = document.getElementById('saveBtn'); btn.disabled = true;
+        const phone = document.getElementById('phone').value;
+        localStorage.setItem('myPhone', phone);
+        
+        const files = document.getElementById('photoInput').files;
+        let imgs = [];
+        for (let f of files) {
+            let b64 = await new Promise(r => { let reader = new FileReader(); reader.onload = () => r(reader.result); reader.readAsDataURL(f); });
+            imgs.push(b64);
+        }
+        
+        const adData = { title: document.getElementById('title').value, phone: phone, price: document.getElementById('price').value, desc: document.getElementById('desc').value, category: document.getElementById('category').value, images: imgs.join('|'), breed: document.getElementById('breed').value, city: document.getElementById('city').value };
+        const { error } = await sb.from('ads').insert([adData]);
+        if (error) { alert("Ошибка сохранения"); btn.disabled = false; }
+        else { alert("Успешно!"); hideModal('form'); await loadData(); renderAds(); }
+    }
+
     function showModal(id) { document.getElementById(id).style.display = 'flex'; }
     function hideModal(id) { document.getElementById(id).style.display = 'none'; }
-    async function updateMyFavs() { /* Ваша логика избранного */ }
-    async function toggleFavorite(adId) { /* Ваша логика */ }
-    function previewPhotos() { /* Ваша логика */ }
-    async function saveAd() { /* Ваша логика */ }
-    function openView(id) { /* Ваша логика */ }
-    function moveSlide(n) { /* Ваша логика */ }
-    async function openChat(id) { /* Ваша логика */ }
-    async function sendMsg() { /* Ваша логика */ }
-    async function showMyChats() { /* Ваша логика */ }
-    async function showFavorites() { /* Ваша логика */ }
-    function manageMyAds() { isMyMode = true; renderAds(); }
+    
+    function openView(id) {
+        const ad = ads.find(a => a.id == id);
+        if (!ad) return;
+        const imgs = ad.images ? ad.images.split('|') : [];
+        slideIdx = 0;
+        document.getElementById('viewContent').innerHTML = `
+            <h2>${ad.title}</h2>
+            <div class="slider-container">
+                ${imgs.map((i, idx) => `<img src="${i}" class="slider-img ${idx === 0 ? 'active' : ''}">`).join('')}
+                ${imgs.length > 1 ? `<button class="nav-btn" style="left:0" onclick="moveSlide(-1)">❮</button><button class="nav-btn" style="right:0" onclick="moveSlide(1)">❯</button>` : ''}
+            </div>
+            <p><b>Цена:</b> ${ad.price} грн</p><p><b>Город:</b> ${ad.city || 'Не указан'}</p>
+            <p>${ad.desc}</p>
+            <div style="display:flex; gap:10px; margin-top:15px;">
+                <button class="action-btn btn-chat" onclick="openChat('${ad.id}')">Написать</button>
+                <a href="tel:${ad.phone}" class="action-btn btn-call" style="text-decoration:none;">Позвонить</a>
+            </div>
+            <button onclick="hideModal('viewModal')" style="width:100%; margin-top:15px; background:none; border:none;">Закрыть</button>`;
+        showModal('viewModal');
+    }
+    
+    function moveSlide(n) {
+        const s = document.querySelectorAll('.slider-img');
+        if (s.length > 0) { s[slideIdx].classList.remove('active'); slideIdx = (slideIdx + n + s.length) % s.length; s[slideIdx].classList.add('active'); }
+    }
 
+    async function openChat(id) {
+        activeAdId = id; hideModal('viewModal'); showModal('chatModal');
+        const { data } = await sb.from('messages').select('*').eq('ad_id', id).order('created_at', { ascending: true });
+        document.getElementById('messages').innerHTML = data?.map(m => `<div><b>${m.sender}:</b> ${m.text}</div>`).join('') || 'Нет сообщений.';
+    }
+
+    async function sendMsg() {
+        const text = document.getElementById('msgText').value.trim();
+        if (!text) return;
+        let name = localStorage.getItem('myChatName');
+        await sb.from('messages').insert([{ ad_id: activeAdId, sender: name, text: text }]);
+        document.getElementById('msgText').value = ''; openChat(activeAdId);
+    }
+
+    async function showMyChats() {
+        showModal('myChatsModal');
+        let name = localStorage.getItem('myChatName');
+        const { data } = await sb.from('messages').select('ad_id').eq('sender', name);
+        const ids = [...new Set(data?.map(m => m.ad_id) || [])];
+        document.getElementById('chatsList').innerHTML = ids.map(id => {
+            const ad = ads.find(a => a.id == id);
+            return `<div onclick="hideModal('myChatsModal'); openChat('${id}')">💬 ${ad ? ad.title : 'Удалено'}</div>`;
+        }).join('');
+    }
+
+    async function showFavorites() {
+        showModal('favModal');
+        document.getElementById('favList').innerHTML = myFavs.map(id => {
+            const ad = ads.find(a => a.id == id);
+            return `<div onclick="hideModal('favModal'); openView('${id}')">❤️ ${ad ? ad.title : 'Удалено'}</div>`;
+        }).join('');
+    }
 </script>
 </body>
 </html>
