@@ -473,27 +473,35 @@ async function showFavorites() {
     async function checkNewMessages() {
     const name = localStorage.getItem('myChatName');
     const myPhone = localStorage.getItem('myPhone');
-    if (!name || !myPhone) return;
+    const badge = document.getElementById('chatBadge');
+    
+    if (!name || !myPhone || !badge) return;
 
-    // Получаем ID наших объявлений
+    // 1. Получаем ID наших объявлений
     const { data: myAds } = await sb.from('ads').select('id').eq('phone', myPhone);
-    if (!myAds || myAds.length === 0) return;
+    if (!myAds || myAds.length === 0) {
+        badge.style.display = 'none'; // Если объявлений нет, индикатор скрыт
+        return;
+    }
 
     const myAdIds = myAds.map(a => a.id);
 
-    // Проверяем наличие сообщений, которые написали не мы
+    // 2. Ищем сообщения, где ad_id в списке наших, 
+    // sender НЕ МЫ, и (можно добавить проверку) сообщение было отправлено недавно
     const { data: messages } = await sb.from('messages')
         .select('id')
         .in('ad_id', myAdIds)
         .neq('sender', name); 
 
-    const badge = document.getElementById('chatBadge');
-    if (badge) {
-        badge.style.display = (messages && messages.length > 0) ? 'block' : 'none';
+    // 3. Логика включения:
+    // Если есть хоть одно сообщение от других людей — включаем красный индикатор
+    if (messages && messages.length > 0) {
+        badge.style.display = 'block'; // Показываем красный
+    } else {
+        badge.style.display = 'none';  // Скрываем (серый/прозрачный)
     }
     }
     
-
 </script>
 </body>
 </html>
