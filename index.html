@@ -217,6 +217,18 @@
 
         const query = document.getElementById('searchInput').value.toLowerCase();
         let filtered = ads.filter(ad => (ad.title?.toLowerCase().includes(query) || ad.desc?.toLowerCase().includes(query)) && (activeCat === '' || ad.category === activeCat));
+
+        // Добавляем получение города
+        const cityFilterValue = document.getElementById('cityFilter').value;
+
+        let filtered = ads.filter(ad => {
+            const matchesSearch = (ad.title?.toLowerCase().includes(query) || ad.desc?.toLowerCase().includes(query));
+            const matchesCat = (activeCat === '' || ad.category === activeCat);
+            // Добавляем саму проверку города
+            const matchesCity = (cityFilterValue === '' || ad.city === cityFilterValue);
+            
+            return matchesSearch && matchesCat && matchesCity;
+        });
         
         if (isMyMode) {
             const myPhone = localStorage.getItem('myPhone');
