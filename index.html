@@ -11,8 +11,7 @@
         header { background: #002f34; color: white; padding: 15px; text-align: center; }
         .search-box { padding: 10px; background: white; }
         .search-input { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 20px; }
-        /* Добавлено для выбора города */
-        .filter-city { padding: 10px; background: white; }
+        .filter-city { padding: 5px 10px 10px 10px; background: white; }
         .city-select { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 20px; }
         .categories { display: flex; gap: 10px; padding: 10px; overflow-x: auto; background: white; }
         .cat-btn { padding: 8px 15px; border: 1px solid #002f34; border-radius: 20px; cursor: pointer; white-space: nowrap; }
@@ -41,7 +40,6 @@
     <input type="text" id="searchInput" class="search-input" placeholder="Поиск..." oninput="renderAds()">
 </div>
 
-<!-- Добавлен селект выбора города -->
 <div class="filter-city">
     <select id="cityFilter" class="city-select" onchange="renderAds()">
         <option value="">Все города</option>
@@ -50,6 +48,9 @@
         <option value="Харьков">Харьков</option>
         <option value="Одесса">Одесса</option>
         <option value="Днепр">Днепр</option>
+        <option value="Запорожье">Запорожье</option>
+        <option value="Львов">Львов</option>
+        <option value="Винница">Винница</option>
     </select>
 </div>
 
@@ -186,15 +187,14 @@
         if (!isLoaded && ads.length === 0) return;
 
         const query = document.getElementById('searchInput').value.toLowerCase();
-        // Берем значение выбранного города
         const cityFilter = document.getElementById('cityFilter').value;
         
-        // Фильтруем по поиску, категории и городу одновременно
-        let filtered = ads.filter(ad => 
-            (ad.title?.toLowerCase().includes(query) || ad.desc?.toLowerCase().includes(query)) && 
-            (activeCat === '' || ad.category === activeCat) &&
-            (cityFilter === '' || ad.city === cityFilter)
-        );
+        let filtered = ads.filter(ad => {
+            const matchesText = ad.title?.toLowerCase().includes(query) || ad.desc?.toLowerCase().includes(query);
+            const matchesCat = activeCat === '' || ad.category === activeCat;
+            const matchesCity = cityFilter === '' || ad.city === cityFilter;
+            return matchesText && matchesCat && matchesCity;
+        });
         
         if (isMyMode) {
             const myPhone = localStorage.getItem('myPhone');
@@ -221,7 +221,7 @@
         isMyMode = false; 
         activeCat = ''; 
         document.getElementById('searchInput').value = ''; 
-        document.getElementById('cityFilter').value = ''; // Сброс города
+        document.getElementById('cityFilter').value = '';
         renderAds(); 
     }
 
@@ -420,6 +420,4 @@
         }).join('') || '<div style="padding:10px; color:gray;">Нет активных диалогов</div>';
     }
 
-    async function showFavorites() {
-        showModal('favModal');
-        
+    asyn
