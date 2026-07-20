@@ -451,36 +451,28 @@
                 💬 ${ad ? ad.title : 'Удаленное объявление'}
             </div>`;
         }).join('') || '<div style="padding:10px; color:gray;">Нет активных диалогов</div>';
+        
     }
-
-    async function showFavorites() {
+async function showFavorites() {
     showModal('favModal');
+    const favList = document.getElementById('favList');
     
-    // Фильтруем список ID: оставляем только те, которые есть в массиве ads
-    myFavs = myFavs.filter(favId => ads.some(ad => String(ad.id) === String(favId)));
-    
-    if (myFavs.length === 0) {
-        document.getElementById('favList').innerHTML = '<p style="padding:10px;">Избранного пока нет</p>';
+    if (typeof ads === 'undefined' || !ads) {
+        favList.innerHTML = '<p style="padding:10px;">Загрузка...</p>';
         return;
     }
 
-     // Сначала чистим myFavs от удаленных объявлений
-    myFavs = myFavs.filter(id => ads.some(a => String(a.id) === String(id)));
-    localStorage.setItem('myFavs', JSON.stringify(myFavs));
-
-    if (myFavs.length === 0) {ml}
-        document.getElementById('favList').innerHTML = '<p style="padding:10px;">Избранного пока нет</p>';
-        } else {
-        // Добавляем фильтрацию внутри map, чтобы отсеять пустые значения
-        document.getElementById('favList').innerHTML = myFavs
-            .map(id => ads.find(a => String(a.id) === String(id)))
-            .filter(ad => ad !== undefined) // Убираем всё, чего нет в базе
-            .map(ad => `
-                <div style="padding:12px; border-bottom:1px solid #eee;">
-                    ♥️ <b>${ad.title}</b>
-                </div>
-            `).join('');
+    const validFavs = myFavs.filter(id => ads.some(a => String(a.id) === String(id)));
+    
+    if (validFavs.length === 0) {
+        favList.innerHTML = '<p style="padding:10px;">Избранного пока нет</p>';
+    } else {
+        favList.innerHTML = validFavs.map(id => {
+            const ad = ads.find(a => String(a.id) === String(id));
+            return ad ? `<div style="padding:12px; border-bottom:1px solid #eee;">♥️ <b>${ad.title}</b></div>` : '';
+        }).join('');
     }
+}
     
 </script>
 </body>
