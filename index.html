@@ -139,6 +139,8 @@
     });
 
     async function initApp() {
+        // Убрали жесткий таймер, который мог блокировать интерфейс,
+        // теперь вызываем загрузку данных и сразу разрешаем отрисовку
         await loadData();
         isLoaded = true;
         renderAds();
@@ -155,19 +157,16 @@
             }
         } catch (err) {
             console.error("Ошибка загрузки данных из Supabase:", err);
-            document.getElementById('grid').innerHTML = '<p style="padding:20px; text-align:center;">Ошибка сети. Используется кэш.</p>';
+            // Если есть кэш, данные уже в переменной ads (из localStorage)
         }
     }
 
     function renderAds() {
         const grid = document.getElementById('grid');
-        const query = document.getElementById('searchInput').value.toLowerCase();
         
-        let filtered = ads.filter(ad => {
-            const matchesQuery = (ad.title?.toLowerCase().includes(query) || ad.desc?.toLowerCase().includes(query));
-            const matchesCat = (activeCat === '' || ad.category === activeCat);
-            return matchesQuery && matchesCat;
-        });
+        // Удалена блокировка if (!isLoaded ...), чтобы список всегда был виден
+        const query = document.getElementById('searchInput').value.toLowerCase();
+        let filtered = ads.filter(ad => (ad.title?.toLowerCase().includes(query) || ad.desc?.toLowerCase().includes(query)) && (activeCat === '' || ad.category === activeCat));
         
         if (isMyMode) {
             const myPhone = localStorage.getItem('myPhone');
@@ -207,7 +206,7 @@
         if (!confirm("Вы действительно хотите удалить это объявление?")) return;
         const { error } = await sb.from('ads').delete().eq('id', adId);
         if (error) {
-            alert("Ошибка удаления.");
+            alert("Не удалось удалить объявление. Проверьте права.");
         } else {
             ads = ads.filter(a => a.id != adId);
             renderAds();
@@ -215,7 +214,7 @@
     }
 
     function manageMyAds() {
-        const phone = localStorage.getItem('myPhone') || prompt("Введите ваш номер телефона для авторизации:");
+        const phone = localStorage.getItem('myPhone') || prompt("Введите ваш номер телефона для авторизации объявлений:");
         if (!phone) return;
         localStorage.setItem('myPhone', phone);
         isMyMode = true; 
@@ -232,7 +231,7 @@
     }
 
     async function toggleFavorite(adId) {
-        let name = localStorage.getItem('myChatName') || prompt("Введите ваше имя:");
+        let name = localStorage.getItem('myChatName') || prompt("Введите ваше имя для работы с избранным:");
         if (!name) return; 
         localStorage.setItem('myChatName', name);
         const idNum = Number(adId);
@@ -290,11 +289,13 @@
         
         const { error } = await sb.from('ads').insert([adData]);
         if (error) { 
-            alert("Ошибка сохранения."); 
+            alert("Ошибка сохранения объявления. Проверьте структуру полей и RLS."); 
             btn.disabled = false; 
         } else { 
             alert("Успешно опубликовано!"); 
             hideModal('form'); 
+            
+            // Очистка формы
             document.getElementById('title').value = '';
             document.getElementById('price').value = '';
             document.getElementById('desc').value = '';
@@ -302,6 +303,7 @@
             document.getElementById('city').value = '';
             document.getElementById('photoInput').value = '';
             document.getElementById('previewArea').innerHTML = '';
+            
             await loadData(); 
             renderAds(); 
         }
@@ -322,15 +324,15 @@
                 ${imgs.map((i, idx) => `<img src="${i}" class="slider-img ${idx === 0 ? 'active' : ''}">`).join('')}
                 ${imgs.length > 1 ? `<button class="nav-btn" style="left:0" onclick="moveSlide(-1)">❮</button><button class="nav-btn" style="right:0" onclick="moveSlide(1)">❯</button>` : ''}
             </div>
-            <p>Цена: ${ad.price} грн</p>
-            <p>Город: ${ad.city || 'Не указан'}</p>
-            <p>Порода: ${ad.breed || 'Не указана'}</p>
-            <p style="margin-top:10px;">${ad.desc}</p>
+            <p style="margin-top:10px;"><b>Цена:</b> ${ad.price} грн</p>
+            <p style="margin-top:5px;"><b>Город:</b> ${ad.city || 'Не указан'}</p>
+            <p style="margin-top:5px;"><b>Порода/Вид:</b> ${ad.breed || 'Не указана'}</p>
+            <p style="margin-top:10px; border-top:1px solid #eee; padding-top:10px;">${ad.desc}</p>
             <div style="display:flex; gap:10px; margin-top:15px;">
                 <button class="action-btn btn-chat" onclick="openChat('${ad.id}')">Написать</button>
                 <a href="tel:${ad.phone}" class="action-btn btn-call" style="text-decoration:none;">Позвонить</a>
             </div>
-            <button onclick="hideModal('viewModal')" style="width:100%; margin-top:15px; background:none; border:none;">Закрыть</button>`;
+            <button onclick="hideModal('viewModal')" style="width:100%; margin-top:15px; background:none; border:none; color:#555; font-weight:bold;">Закрыть</button>`;
         showModal('viewModal');
     }
     
@@ -349,7 +351,12 @@
         showModal('chatModal');
         const { data } = await sb.from('messages').select('*').eq('ad_id', id).order('created_at', { ascending: true });
         document.getElementById('messages').innerHTML = data?.map(m => `
-            <div style="margin-bottom:8px;"><b>${m.sender || 'Аноним'}:</b> ${m.text}</div>`).join('') || 'Нет сообщений.';
+            <div style="margin-bottom:8px; word-break:break-word;">
+                <b>${m.sender || 'Аноним'}:</b> ${m.text}
+            </div>`).join('') || '<div style="color:gray;">Нет сообщений. Начните диалог первым!</div>';
+        
+        const box = document.getElementById('messages');
+        box.scrollTop = box.scrollHeight;
     }
 
     async function sendMsg() {
@@ -357,7 +364,7 @@
         if (!text) return;
         let name = localStorage.getItem('myChatName');
         if (!name) {
-            name = prompt("Ваше имя:");
+            name = prompt("Введите ваше имя для отображения в чате:");
             if (!name) return;
             localStorage.setItem('myChatName', name);
         }
@@ -369,21 +376,33 @@
     async function showMyChats() {
         showModal('myChatsModal');
         let name = localStorage.getItem('myChatName');
-        if (!name) { document.getElementById('chatsList').innerHTML = 'Нет чатов.'; return; }
+        if (!name) {
+            document.getElementById('chatsList').innerHTML = '<div style="padding:10px; color:gray;">Вы еще не общались в чатах</div>';
+            return;
+        }
         const { data } = await sb.from('messages').select('ad_id').eq('sender', name);
         const uniqueIds = [...new Set(data?.map(m => m.ad_id) || [])];
+        
         document.getElementById('chatsList').innerHTML = uniqueIds.map(id => {
             const ad = ads.find(a => a.id == id);
-            return `<div style="padding:10px; border-bottom:1px solid #eee;" onclick="hideModal('myChatsModal'); openChat('${id}')">💬 ${ad ? ad.title : 'Удалено'}</div>`;
-        }).join('');
+            return `<div style="padding:12px; border-bottom:1px solid #eee; cursor:pointer; font-weight:bold;" onclick="hideModal('myChatsModal'); openChat('${id}')">
+                💬 ${ad ? ad.title : 'Удаленное объявление'}
+            </div>`;
+        }).join('') || '<div style="padding:10px; color:gray;">Нет активных диалогов</div>';
     }
 
     async function showFavorites() {
         showModal('favModal');
+        if (myFavs.length === 0) {
+            document.getElementById('favList').innerHTML = '<div style="padding:10px; color:gray;">Список избранного пуст</div>';
+            return;
+        }
         document.getElementById('favList').innerHTML = myFavs.map(id => {
             const ad = ads.find(a => a.id == id);
-            return `<div style="padding:10px; border-bottom:1px solid #eee;" onclick="hideModal('favModal'); openView('${id}')">❤️ ${ad ? ad.title : 'Удалено'}</div>`;
-        }).join('') || 'Список пуст.';
+            return `<div style="padding:12px; border-bottom:1px solid #eee; cursor:pointer;" onclick="hideModal('favModal'); openView('${id}')">
+                ❤️ <b>${ad ? ad.title : 'Удалено'}</b> ${ad ? `— ${ad.price} грн` : ''}
+            </div>`;
+        }).join('');
     }
 </script>
 </body>
