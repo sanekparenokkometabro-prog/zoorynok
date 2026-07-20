@@ -28,15 +28,8 @@
         .slider-img { width: 100%; height: 250px; object-fit: cover; display: none; }
         .slider-img.active { display: block; }
         .nav-btn { position: absolute; top: 50%; transform: translateY(-50%); background: rgba(0,0,0,0.5); color: white; border: none; padding: 10px; cursor: pointer; }
-    </style>
-</head>
-<body>
 
-<header><h1>ЗооРынок 🐾</h1></header>
-
-<div class="search-box">
-    <input type="text" id="searchInput" class="search-input" placeholder="Поиск..." oninput="renderAds()" style="margin-bottom: 10px;">
-    <!-- Добавленный фильтр городов -->
+   <!-- Добавленный фильтр городов -->
     <select id="cityFilter" class="search-input" onchange="renderAds()">
         <option value="">Все города</option>
         <option value="Киев">Киев</option>
@@ -64,6 +57,16 @@
         <option value="Луцк">Луцк</option>
         <option value="Ужгород">Ужгород</option>
     </select>
+</div>
+
+    </style>
+</head>
+<body>
+
+<header><h1>ЗооРынок 🐾</h1></header>
+
+<div class="search-box">
+    <input type="text" id="searchInput" class="search-input" placeholder="Поиск..." oninput="renderAds()">
 </div>
 
 <div class="categories">
@@ -94,8 +97,6 @@
     <datalist id="cities">
         <option value="Киев">
         <option value="Кривой Рог">
-        <option value="Лозоватка">
-        <option value="Марьяновка">
         <option value="Харьков">
         <option value="Одесса">
         <option value="Днепр">
@@ -162,22 +163,34 @@
     const sb = supabase.createClient('https://qdesomzmhrghygzprftz.supabase.co', 'sb_publishable_ru6cRM3d9mYcDj7tjvAStQ_7rqIftg0');
     
     let ads = JSON.parse(localStorage.getItem('cached_ads') || '[]');
-    let myFavs = [], activeAdId = null, slideIdx = 0, activeCat = '', isMyMode = false;
+    let myFavs = [], activeAdId = null, slideIdx = 0, activeCat = '', isMyMode = false, isLoaded = false;
 
-    // ИСПРАВЛЕННАЯ ЛОГИКА ЗАГРУЗКИ:
     document.addEventListener('DOMContentLoaded', () => {
-        renderAds(); // Показываем кэш сразу
-        loadData();  // Обновляем данные в фоне
-        updateMyFavs();
+        initApp();
     });
+
+    async function initApp() {
+        const timer = setTimeout(() => {
+            if (!isLoaded) {
+                document.getElementById('grid').innerHTML = '<p style="padding:20px; text-align:center;">Ошибка подключения к базе. Проверьте настройки RLS в Supabase.</p>';
+            }
+        }, 8000);
+
+        await loadData();
+        clearTimeout(timer);
+        
+        isLoaded = true;
+        renderAds();
+        updateMyFavs();
+    }
 
     async function loadData() {
         try {
             const { data, error } = await sb.from('ads').select('*').order('id', { ascending: false });
+            if (error) throw error;
             if (data) {
                 ads = data;
                 localStorage.setItem('cached_ads', JSON.stringify(data));
-                renderAds(); // Обновляем список, если данные пришли
             }
         } catch (err) {
             console.error("Ошибка загрузки данных из Supabase:", err);
@@ -186,15 +199,10 @@
 
     function renderAds() {
         const grid = document.getElementById('grid');
-        const query = document.getElementById('searchInput').value.toLowerCase();
-        const cityFilterValue = document.getElementById('cityFilter').value;
+        if (!isLoaded && ads.length === 0) return;
 
-        let filtered = ads.filter(ad => {
-            const matchesSearch = (ad.title?.toLowerCase().includes(query) || ad.desc?.toLowerCase().includes(query));
-            const matchesCat = (activeCat === '' || ad.category === activeCat);
-            const matchesCity = (cityFilterValue === '' || ad.city === cityFilterValue);
-            return matchesSearch && matchesCat && matchesCity;
-        });
+        const query = document.getElementById('searchInput').value.toLowerCase();
+        let filtered = ads.filter(ad => (ad.title?.toLowerCase().includes(query) || ad.desc?.toLowerCase().includes(query)) && (activeCat === '' || ad.category === activeCat));
         
         if (isMyMode) {
             const myPhone = localStorage.getItem('myPhone');
@@ -211,7 +219,6 @@
                 <div onclick="openView('${ad.id}')">
                     <img src="${ad.images ? ad.images.split('|')[0] : ''}" loading="lazy">
                     <b>${ad.title}</b><br><small>${ad.price} грн</small>
-                    <br><small>Город: ${ad.city || 'Не указан'}</small>
                 </div>
                 <button onclick="toggleFavorite('${ad.id}')" style="margin-top:5px; width:100%; border:none; background:#eee; color: ${myFavs.includes(Number(ad.id)) ? 'red' : 'gray'}">♥</button>
                 ${isMyMode ? `<button onclick="deleteAd('${ad.id}')" style="margin-top:5px; width:100%; border:none; background:#ffeded; color:red;">Удалить</button>` : ''}
@@ -222,7 +229,6 @@
         isMyMode = false; 
         activeCat = ''; 
         document.getElementById('searchInput').value = ''; 
-        document.getElementById('cityFilter').value = ''; 
         renderAds(); 
     }
 
@@ -325,6 +331,7 @@
             alert("Успешно опубликовано!"); 
             hideModal('form'); 
             
+            // Очистка формы
             document.getElementById('title').value = '';
             document.getElementById('price').value = '';
             document.getElementById('desc').value = '';
@@ -412,4 +419,6 @@
         const { data } = await sb.from('messages').select('ad_id').eq('sender', name);
         const uniqueIds = [...new Set(data?.map(m => m.ad_id) || [])];
         
-        document
+        document.getElementById('chatsList').innerHTML = uniqueIds.map(id => {
+            const ad = ads.find(a => a.id == id);
+            return `<div style="padd
