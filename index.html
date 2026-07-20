@@ -401,22 +401,7 @@ function renderAds() {
     
     // Если этот alert не появляется, значит, кнопка в HTML вообще не вызывает функцию
     }
-
-    chatContainer.innerHTML = 'Загрузка...';
-
-    try {
-        // Запрос к базе данных
-        const { data: messages, error } = await sb.from('messages')
-            .select('*')
-            .eq('ad_id', adId)
-            .order('created_at', { ascending: true });
-
-        if (error) {
-            console.error("Ошибка Supabase:", error);
-            chatContainer.innerHTML = 'Ошибка загрузки сообщений';
-            return;
-        }
-
+    
         // Если сообщения есть — выводим, если нет — пишем, что пусто
         if (messages && messages.length > 0) {
             chatContainer.innerHTML = messages.map(m => `
