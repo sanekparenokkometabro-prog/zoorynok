@@ -464,12 +464,19 @@
         return;
     }
 
-    document.getElementById('favList').innerHTML = myFavs.map(id => {
-        const ad = ads.find(a => String(a.id) === String(id));
-        return `<div style="padding:12px; border-bottom:1px solid #eee;">
-            ♥️ <b>${ad ? ad.title : 'Удаленное объявление'}</b>
-        </div>`;
-    }).join('');
+     // Сначала чистим myFavs от удаленных объявлений
+    myFavs = myFavs.filter(id => ads.some(a => String(a.id) === String(id)));
+    localStorage.setItem('myFavs', JSON.stringify(myFavs));
+
+    if (myFavs.length === 0) {
+        document.getElementById('favList').innerHTML = '<p style="padding:10px;">Избранного пока нет</p>';
+    } else {
+        document.getElementById('favList').innerHTML = myFavs.map(id => {
+            const ad = ads.find(a => String(a.id) === String(id));
+            return `<div style="padding:12px; border-bottom:1px solid #eee;">
+                ♥️ <b>${ad.title}</b>
+            </div>`;
+        }).join('');
     }
     
 </script>
