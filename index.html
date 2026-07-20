@@ -9,8 +9,9 @@
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: sans-serif; }
         body { background: #f2f4f5; padding-bottom: 100px; width: 100%; overflow-x: hidden; }
         header { background: #002f34; color: white; padding: 15px; text-align: center; }
-        .search-box { padding: 10px; background: white; }
-        .search-input { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 20px; }
+        .search-box { padding: 10px; background: white; display: flex; gap: 5px; }
+        .search-input { width: 70%; padding: 10px; border: 1px solid #ccc; border-radius: 20px; }
+        .city-select { width: 30%; padding: 10px; border: 1px solid #ccc; border-radius: 20px; }
         .categories { display: flex; gap: 10px; padding: 10px; overflow-x: auto; background: white; }
         .cat-btn { padding: 8px 15px; border: 1px solid #002f34; border-radius: 20px; cursor: pointer; white-space: nowrap; }
         .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 15px; }
@@ -36,6 +37,16 @@
 
 <div class="search-box">
     <input type="text" id="searchInput" class="search-input" placeholder="Поиск..." oninput="renderAds()">
+    <select id="cityFilter" class="city-select" onchange="renderAds()">
+        <option value="">Все</option>
+        <option value="Киев">Киев</option>
+        <option value="Кривой Рог">Кривой Рог</option>
+        <option value="Харьков">Харьков</option>
+        <option value="Одесса">Одесса</option>
+        <option value="Днепр">Днепр</option>
+        <option value="Винница">Винница</option>
+        <option value="Львов">Львов</option>
+    </select>
 </div>
 
 <div class="categories">
@@ -139,8 +150,6 @@
     });
 
     async function initApp() {
-        // Убрали жесткий таймер, который мог блокировать интерфейс,
-        // теперь вызываем загрузку данных и сразу разрешаем отрисовку
         await loadData();
         isLoaded = true;
         renderAds();
@@ -157,16 +166,20 @@
             }
         } catch (err) {
             console.error("Ошибка загрузки данных из Supabase:", err);
-            // Если есть кэш, данные уже в переменной ads (из localStorage)
         }
     }
 
     function renderAds() {
         const grid = document.getElementById('grid');
-        
-        // Удалена блокировка if (!isLoaded ...), чтобы список всегда был виден
         const query = document.getElementById('searchInput').value.toLowerCase();
-        let filtered = ads.filter(ad => (ad.title?.toLowerCase().includes(query) || ad.desc?.toLowerCase().includes(query)) && (activeCat === '' || ad.category === activeCat));
+        const cityQuery = document.getElementById('cityFilter').value;
+
+        let filtered = ads.filter(ad => {
+            const matchesQuery = (ad.title?.toLowerCase().includes(query) || ad.desc?.toLowerCase().includes(query));
+            const matchesCat = (activeCat === '' || ad.category === activeCat);
+            const matchesCity = (cityQuery === '' || ad.city === cityQuery);
+            return matchesQuery && matchesCat && matchesCity;
+        });
         
         if (isMyMode) {
             const myPhone = localStorage.getItem('myPhone');
@@ -193,6 +206,7 @@
         isMyMode = false; 
         activeCat = ''; 
         document.getElementById('searchInput').value = ''; 
+        document.getElementById('cityFilter').value = '';
         renderAds(); 
     }
 
@@ -399,11 +413,4 @@
         }
         document.getElementById('favList').innerHTML = myFavs.map(id => {
             const ad = ads.find(a => a.id == id);
-            return `<div style="padding:12px; border-bottom:1px solid #eee; cursor:pointer;" onclick="hideModal('favModal'); openView('${id}')">
-                ❤️ <b>${ad ? ad.title : 'Удалено'}</b> ${ad ? `— ${ad.price} грн` : ''}
-            </div>`;
-        }).join('');
-    }
-</script>
-</body>
-</html>
+            return `<div style="padding:12px; border-bottom:1px solid #eee; cursor:pointer;" onclick="hideModal('favModal'); openView('
