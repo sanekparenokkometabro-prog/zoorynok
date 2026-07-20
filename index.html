@@ -396,12 +396,19 @@ function renderAds() {
     }
 
     async function openChat(adId) {
-    console.log("Пытаюсь открыть чат, ID:", adId); // Это покажет в консоли, доходит ли клик
+    console.log("Открытие чата для:", adId);
     
-    // Закрываем модальное окно списка чатов, чтобы оно не перекрывало
-    closeModal('myChatModal'); 
+    // 1. Закрываем окно списка
+    closeModal('myChatModal');
+    
+    // 2. Показываем индикатор загрузки внутри самого чата (если есть div)
+    const chatContainer = document.getElementById('chatMessages');
+    if (chatContainer) chatContainer.innerHTML = 'Загрузка сообщений...';
 
-    // ... остальной твой код открытия ...
+    // 3. ТУТ ДОЛЖЕН БЫТЬ ТВОЙ КОД ЗАГРУЗКИ СООБЩЕНИЙ
+    // Если он у тебя ниже, убедись, что нет бесконечного цикла await
+    
+    // Если код загрузки есть, раскомментируй его здесь или добавь ниже
     }
     
     async function sendMsg() {
