@@ -79,7 +79,10 @@
     <button onclick="resetApp()" style="background:none; border:none; color:white; font-size:24px;">🏠</button>
     <button onclick="showFavorites()" style="background:none; border:none; color:#ff5a5f; font-size:26px;">♥️</button>
     <button class="btn-add-center" onclick="showModal('form')">+</button>
-    <button onclick="showMyChats()" style="background:none; border:none; color:white; font-size:24px;">💬</button>
+    <button onclick="showMyChats()" style="background:none; border:none; color:white; font-size:24px; position:relative;">
+    💬<span id="chatBadge" style="display:none; position:absolute; top:0; right:0; background:red; width:10px; height:10px; border-radius:50%;"></span>
+    </button>
+    
     <button onclick="manageMyAds()" style="background:none; border:none; color:white; font-size:24px;">👤</button>
 </div>
 
