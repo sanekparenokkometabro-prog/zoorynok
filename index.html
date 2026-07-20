@@ -395,36 +395,48 @@ function renderAds() {
         }
     }
     async function openChat(adId) {
-    console.log("Пытаюсь открыть чат, ID:", adId);
+    async function openChat(adId) {
+    console.log("Открываем чат для объявления:", adId);
     
-    // 1. Закрываем модальное окно списка чатов
+    // Закрываем модальное окно списка
     closeModal('myChatModal');
     
     const chatContainer = document.getElementById('chatMessages');
-    if (!chatContainer) return;
-
-    chatContainer.innerHTML = 'Загрузка сообщений...';
-
-    // 2. Загружаем сообщения для этого объявления из базы Supabase
-    const { data: messages, error } = await sb.from('messages')
-        .select('*')
-        .eq('ad_id', adId)
-        .order('created_at', { ascending: true });
-
-    if (error) {
-        chatContainer.innerHTML = 'Ошибка загрузки сообщений';
-        console.error(error);
+    if (!chatContainer) {
+        console.error("Не найден элемент chatMessages на странице!");
         return;
     }
 
-    // 3. Выводим сообщения на экран
-    chatContainer.innerHTML = messages.map(m => `
-        <div style="margin: 8px; padding: 8px; background: #f1f1f1; border-radius: 8px;">
-            <strong>${m.sender}:</strong> ${m.text}
-        </div>
-    `).join('') || '<div style="color: gray; text-align: center;">Нет сообщений</div>';
+    chatContainer.innerHTML = 'Загрузка...';
+
+    try {
+        // Запрос к базе данных
+        const { data: messages, error } = await sb.from('messages')
+            .select('*')
+            .eq('ad_id', adId)
+            .order('created_at', { ascending: true });
+
+        if (error) {
+            console.error("Ошибка Supabase:", error);
+            chatContainer.innerHTML = 'Ошибка загрузки сообщений';
+            return;
+        }
+
+        // Если сообщения есть — выводим, если нет — пишем, что пусто
+        if (messages && messages.length > 0) {
+            chatContainer.innerHTML = messages.map(m => `
+                <div style="padding: 8px; margin: 5px; background: #eee; border-radius: 5px;">
+                    <b>${m.sender}:</b> ${m.text}
+                </div>
+            `).join('');
+        } else {
+            chatContainer.innerHTML = '<div style="color: gray; text-align: center; padding: 20px;">Нет сообщений в этом чате</div>';
+        }
+    } catch (err) {
+        console.error("Сетевая ошибка:", err);
+        chatContainer.innerHTML = 'Ошибка соединения с базой';
     }
-        
+    }
     
     async function sendMsg() {
         const text = document.getElementById('msgText').value.trim();
@@ -452,10 +464,10 @@ function renderAds() {
         document.getElementById('chatsList').innerHTML = uniqueIds.map(id => {
     const ad = ads.find(a => a.id == id);
     // Добавляем вызов markAsRead и openChat прямо в onClick
-    return `<div onclick="markAsRead('${id}'); openChat('${id}');" style="padding:12px; border-bottom:1px solid #eee; cursor:pointer; font-weight:bold;">
+    return `<div onclick="openChat('${id}')" style="padding:12px; border-bottom:1px solid #eee; cursor:pointer; font-weight:bold;">
     💬 ${ad ? ad.title : 'Удаленное объявление'}
-</div>`;           
-
+</div>`;
+            
 async function showFavorites() {
     showModal('favModal');
     
