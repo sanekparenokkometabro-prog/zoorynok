@@ -394,17 +394,12 @@ function renderAds() {
             s[slideIdx].classList.add('active'); 
         }
     }
+
     async function openChat(adId) {
-    async function openChat(adId) {
-    console.log("Открываем чат для объявления:", adId);
+    console.log("Клик прошел! ID объявления:", adId);
+    alert("Чат для ID: " + adId); // Это окно должно выскочить на экране
     
-    // Закрываем модальное окно списка
-    closeModal('myChatModal');
-    
-    const chatContainer = document.getElementById('chatMessages');
-    if (!chatContainer) {
-        console.error("Не найден элемент chatMessages на странице!");
-        return;
+    // Если этот alert не появляется, значит, кнопка в HTML вообще не вызывает функцию
     }
 
     chatContainer.innerHTML = 'Загрузка...';
