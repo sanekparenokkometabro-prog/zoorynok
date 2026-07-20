@@ -82,7 +82,6 @@
     <button onclick="showMyChats()" style="background:none; border:none; color:white; font-size:24px; position:relative;">
     💬<span id="chatBadge" style="display:none; position:absolute; top:0; right:0; background:red; width:10px; height:10px; border-radius:50%;"></span>
     </button>
-    
     <button onclick="manageMyAds()" style="background:none; border:none; color:white; font-size:24px;">👤</button>
 </div>
 
@@ -474,33 +473,31 @@ async function showFavorites() {
     const name = localStorage.getItem('myChatName');
     const myPhone = localStorage.getItem('myPhone');
     const badge = document.getElementById('chatBadge');
-    
     if (!name || !myPhone || !badge) return;
 
-    // 1. Получаем ID наших объявлений
     const { data: myAds } = await sb.from('ads').select('id').eq('phone', myPhone);
+    
+    // Если объявлений нет, скрываем индикатор
     if (!myAds || myAds.length === 0) {
-        badge.style.display = 'none'; // Если объявлений нет, индикатор скрыт
+        badge.style.display = 'none'; 
         return;
     }
 
     const myAdIds = myAds.map(a => a.id);
 
-    // 2. Ищем сообщения, где ad_id в списке наших, 
-    // sender НЕ МЫ, и (можно добавить проверку) сообщение было отправлено недавно
     const { data: messages } = await sb.from('messages')
         .select('id')
         .in('ad_id', myAdIds)
         .neq('sender', name); 
 
-    // 3. Логика включения:
-    // Если есть хоть одно сообщение от других людей — включаем красный индикатор
-        if (messages && messages.length > 0) {
-        badge.style.backgroundColor = 'red'; // Загорается красным
+    // ВОТ ТУТ ЛОГИКА ИСПРАВЛЕНА:
+    if (messages && messages.length > 0) {
+        badge.style.display = 'block'; // Показываем (красный)
     } else {
-        badge.style.backgroundColor = 'gray'; // Остается серым
-        }
-        
+        badge.style.display = 'none';  // Полностью скрываем
+    }
+    }
+          
 </script>
 </body>
 </html>
