@@ -9,9 +9,9 @@
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: sans-serif; }
         body { background: #f2f4f5; padding-bottom: 100px; width: 100%; overflow-x: hidden; }
         header { background: #002f34; color: white; padding: 15px; text-align: center; }
-        .search-box { padding: 10px; background: white; display: flex; gap: 5px; }
-        .search-input { width: 70%; padding: 10px; border: 1px solid #ccc; border-radius: 20px; }
-        .city-select { width: 30%; padding: 10px; border: 1px solid #ccc; border-radius: 20px; }
+        .search-box { padding: 10px; background: white; }
+        .search-input { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 20px; margin-bottom: 5px; }
+        .city-select { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 20px; background: #fff; }
         .categories { display: flex; gap: 10px; padding: 10px; overflow-x: auto; background: white; }
         .cat-btn { padding: 8px 15px; border: 1px solid #002f34; border-radius: 20px; cursor: pointer; white-space: nowrap; }
         .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 15px; }
@@ -38,14 +38,35 @@
 <div class="search-box">
     <input type="text" id="searchInput" class="search-input" placeholder="Поиск..." oninput="renderAds()">
     <select id="cityFilter" class="city-select" onchange="renderAds()">
-        <option value="">Все</option>
+        <option value="">Вибрати Город</option>
         <option value="Киев">Киев</option>
         <option value="Кривой Рог">Кривой Рог</option>
         <option value="Харьков">Харьков</option>
         <option value="Одесса">Одесса</option>
         <option value="Днепр">Днепр</option>
-        <option value="Винница">Винница</option>
+        <option value="Запорожье">Запорожье</option>
         <option value="Львов">Львов</option>
+        <option value="Николаев">Николаев</option>
+        <option value="Винница">Винница</option>
+        <option value="Чернигов">Чернигов</option>
+        <option value="Полтава">Полтава</option>
+        <option value="Черкассы">Черкассы</option>
+        <option value="Хмельницкий">Хмельницкий</option>
+        <option value="Черновцы">Черновцы</option>
+        <option value="Житомир">Житомир</option>
+        <option value="Сумы">Сумы</option>
+        <option value="Ровно">Ровно</option>
+        <option value="Ивано-Франковск">Ивано-Франковск</option>
+        <option value="Кропивницкий">Кропивницкий</option>
+        <option value="Тернополь">Тернополь</option>
+        <option value="Луцк">Луцк</option>
+        <option value="Ужгород">Ужгород</option>
+        <option value="Кременчуг">Кременчуг</option>
+        <option value="Мариуполь">Мариуполь</option>
+        <option value="Белая Церковь">Белая Церковь</option>
+        <option value="Бровары">Бровары</option>
+        <option value="Каменское">Каменское</option>
+        <option value="Павлоград">Павлоград</option>
     </select>
 </div>
 
@@ -67,7 +88,6 @@
     <button onclick="manageMyAds()" style="background:none; border:none; color:white; font-size:24px;">👤</button>
 </div>
 
-<!-- Модальное окно формы подачи объявления -->
 <div id="form" class="modal"><div class="content">
     <h2>Новое объявление</h2>
     <input id="title" class="field" placeholder="Название">
@@ -75,28 +95,7 @@
     <label for="city">Город:</label>
     <input list="cities" id="city" class="field" placeholder="Выберите или введите город...">
     <datalist id="cities">
-        <option value="Киев">
-        <option value="Кривой Рог">
-        <option value="Харьков">
-        <option value="Одесса">
-        <option value="Днепр">
-        <option value="Запорожье">
-        <option value="Львов">
-        <option value="Николаев">
-        <option value="Винница">
-        <option value="Чернигов">
-        <option value="Полтава">
-        <option value="Черкассы">
-        <option value="Хмельницкий">
-        <option value="Черновцы">
-        <option value="Житомир">
-        <option value="Сумы">
-        <option value="Ровно">
-        <option value="Ивано-Франковск">
-        <option value="Кропивницкий">
-        <option value="Тернополь">
-        <option value="Луцк">
-        <option value="Ужгород">
+        <option value="Киев"><option value="Кривой Рог"><option value="Харьков"><option value="Одесса"><option value="Днепр"><option value="Запорожье"><option value="Львов"><option value="Николаев"><option value="Винница"><option value="Чернигов"><option value="Полтава"><option value="Черкассы"><option value="Хмельницкий"><option value="Черновцы"><option value="Житомир"><option value="Сумы"><option value="Ровно"><option value="Ивано-Франковск"><option value="Кропивницкий"><option value="Тернополь"><option value="Луцк"><option value="Ужгород"><option value="Кременчуг"><option value="Мариуполь"><option value="Белая Церковь"><option value="Бровары"><option value="Каменское"><option value="Павлоград">
     </datalist>
 
     <input id="price" class="field" type="number" placeholder="Цена">
@@ -116,7 +115,6 @@
     <button onclick="hideModal('form')" style="width:100%; margin-top:10px; background:none; border:none; color:red;">Отмена</button>
 </div></div>
 
-<!-- Окна для просмотра, чатов и избранного -->
 <div id="viewModal" class="modal"><div class="content" id="viewContent"></div></div>
 
 <div id="chatModal" class="modal"><div class="content">
@@ -150,7 +148,15 @@
     });
 
     async function initApp() {
+        const timer = setTimeout(() => {
+            if (!isLoaded) {
+                document.getElementById('grid').innerHTML = '<p style="padding:20px; text-align:center;">Ошибка подключения к базе. Проверьте настройки RLS в Supabase.</p>';
+            }
+        }, 8000);
+
         await loadData();
+        clearTimeout(timer);
+        
         isLoaded = true;
         renderAds();
         updateMyFavs();
@@ -171,15 +177,16 @@
 
     function renderAds() {
         const grid = document.getElementById('grid');
-        const query = document.getElementById('searchInput').value.toLowerCase();
-        const cityQuery = document.getElementById('cityFilter').value;
+        if (!isLoaded && ads.length === 0) return;
 
-        let filtered = ads.filter(ad => {
-            const matchesQuery = (ad.title?.toLowerCase().includes(query) || ad.desc?.toLowerCase().includes(query));
-            const matchesCat = (activeCat === '' || ad.category === activeCat);
-            const matchesCity = (cityQuery === '' || ad.city === cityQuery);
-            return matchesQuery && matchesCat && matchesCity;
-        });
+        const query = document.getElementById('searchInput').value.toLowerCase();
+        const cityFilter = document.getElementById('cityFilter').value;
+        
+        let filtered = ads.filter(ad => 
+            (ad.title?.toLowerCase().includes(query) || ad.desc?.toLowerCase().includes(query)) && 
+            (activeCat === '' || ad.category === activeCat) &&
+            (cityFilter === '' || ad.city === cityFilter)
+        );
         
         if (isMyMode) {
             const myPhone = localStorage.getItem('myPhone');
@@ -195,7 +202,7 @@
             <div class="card">
                 <div onclick="openView('${ad.id}')">
                     <img src="${ad.images ? ad.images.split('|')[0] : ''}" loading="lazy">
-                    <b>${ad.title}</b><br><small>${ad.price} грн</small>
+                    <b>${ad.title}</b><br><small>${ad.price} грн</small><br><small style="color:gray;">${ad.city || ''}</small>
                 </div>
                 <button onclick="toggleFavorite('${ad.id}')" style="margin-top:5px; width:100%; border:none; background:#eee; color: ${myFavs.includes(Number(ad.id)) ? 'red' : 'gray'}">♥</button>
                 ${isMyMode ? `<button onclick="deleteAd('${ad.id}')" style="margin-top:5px; width:100%; border:none; background:#ffeded; color:red;">Удалить</button>` : ''}
@@ -309,7 +316,6 @@
             alert("Успешно опубликовано!"); 
             hideModal('form'); 
             
-            // Очистка формы
             document.getElementById('title').value = '';
             document.getElementById('price').value = '';
             document.getElementById('desc').value = '';
@@ -391,26 +397,4 @@
         showModal('myChatsModal');
         let name = localStorage.getItem('myChatName');
         if (!name) {
-            document.getElementById('chatsList').innerHTML = '<div style="padding:10px; color:gray;">Вы еще не общались в чатах</div>';
-            return;
-        }
-        const { data } = await sb.from('messages').select('ad_id').eq('sender', name);
-        const uniqueIds = [...new Set(data?.map(m => m.ad_id) || [])];
-        
-        document.getElementById('chatsList').innerHTML = uniqueIds.map(id => {
-            const ad = ads.find(a => a.id == id);
-            return `<div style="padding:12px; border-bottom:1px solid #eee; cursor:pointer; font-weight:bold;" onclick="hideModal('myChatsModal'); openChat('${id}')">
-                💬 ${ad ? ad.title : 'Удаленное объявление'}
-            </div>`;
-        }).join('') || '<div style="padding:10px; color:gray;">Нет активных диалогов</div>';
-    }
-
-    async function showFavorites() {
-        showModal('favModal');
-        if (myFavs.length === 0) {
-            document.getElementById('favList').innerHTML = '<div style="padding:10px; color:gray;">Список избранного пуст</div>';
-            return;
-        }
-        document.getElementById('favList').innerHTML = myFavs.map(id => {
-            const ad = ads.find(a => a.id == id);
-            return `<div style="padding:12px; border-bottom:1px solid #eee; cursor:pointer;" onclick="hideModal('favModal'); openView('
+            document.getElementById('chatsList').innerHTML =
