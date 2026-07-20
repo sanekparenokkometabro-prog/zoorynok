@@ -435,7 +435,7 @@ function renderAds() {
         
         document.getElementById('chatsList').innerHTML = uniqueIds.map(id => {
             const ad = ads.find(a => a.id == id);
-             return `<div onclick="markAsRead('${id}'); openChat('${id}')" style="padding:12px; border-bottom:1px solid #eee; cursor:pointer; font-weight:bold;">
+        return `<div onclick="markAsRead('${id}').then(() => openChat('${id}'))" style="padding:12px; border-bottom:1px solid #eee; cursor:pointer; font-weight:bold;">
                 💬 ${ad ? ad.title : 'Удаленное объявление'}
             </div>`;
         }).join('') || '<div style="padding:10px; color:gray;">Нет активных диалогов</div>';
@@ -469,38 +469,20 @@ async function showFavorites() {
     }).join('');
 }
 
-async function checkNewMessages() {
-    const name = localStorage.getItem('myChatName');
-    const myPhone = localStorage.getItem('myPhone');
-    const badge = document.getElementById('chatBadge');
-    if (!name || !myPhone || !badge) return;
-
-    const { data: myAds } = await sb.from('ads').select('id').eq('phone', myPhone);
+async function markAsRead(adId) {
+    // 1. Помечаем сообщения как прочитанные в базе
+    // Если у тебя нет поля is_read, просто удали эту часть, 
+    // индикатор все равно обновится через checkNewMessages ниже
+    await sb.from('messages')
+        .update({ is_read: true })
+        .eq('ad_id', adId)
+        .neq('sender', localStorage.getItem('myChatName'));
     
-    // Если объявлений нет, индикатор скрыт
-    if (!myAds || myAds.length === 0) {
-        badge.style.display = 'none';
-        return;
-    }
-
-    const myAdIds = myAds.map(a => a.id);
-
-    // Считаем только сообщения, пришедшие за последние 24 часа
-    const yesterday = new Date();
-    yesterday.setDate(yesterday.getDate() - 1);
-
-    const { data: messages } = await sb.from('messages')
-        .select('id')
-        .in('ad_id', myAdIds)
-        .neq('sender', name)
-        .gt('created_at', yesterday.toISOString()); 
-
-    // Если есть новые сообщения — показываем, если нет — скрываем
-    if (messages && messages.length > 0) {
-        badge.style.display = 'block';
-    } else {
-        badge.style.display = 'none';
-    }
+    // 2. Сразу обновляем состояние индикатора
+    await checkNewMessages();
+    
+    // 3. НИЧЕГО НЕ БЛОКИРУЕМ, просто даем приложению дальше открыть чат
+    console.log("Сообщения прочитаны, открываем чат...");
 }
           
 </script>
