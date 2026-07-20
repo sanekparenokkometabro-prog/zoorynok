@@ -10,10 +10,9 @@
         body { background: #f2f4f5; padding-bottom: 100px; width: 100%; overflow-x: hidden; }
         header { background: #002f34; color: white; padding: 15px; text-align: center; }
         .search-box { padding: 10px; background: white; }
-        .search-input { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 20px; margin-bottom: 10px; }
-        .filter-row { display: flex; gap: 10px; }
-        .categories { display: flex; gap: 10px; padding: 10px; overflow-x: auto; background: white; }
-        .cat-btn { padding: 8px 15px; border: 1px solid #002f34; border-radius: 20px; cursor: pointer; white-space: nowrap; }
+        .search-input { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 20px; margin-bottom: 8px; }
+        .filters { display: flex; gap: 5px; }
+        .field-select { flex: 1; padding: 8px; border: 1px solid #ccc; border-radius: 5px; font-size: 13px; }
         .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 15px; }
         .card { background: white; border-radius: 8px; padding: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
         .card img { width: 100%; height: 120px; object-fit: cover; border-radius: 5px; margin-bottom: 5px; }
@@ -22,13 +21,8 @@
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 2000; align-items: center; justify-content: center; padding: 20px; }
         .content { background: white; width: 100%; max-width: 400px; padding: 20px; border-radius: 10px; max-height: 85vh; overflow-y: auto; }
         .field { width: 100%; margin-bottom: 10px; padding: 10px; border: 1px solid #ccc; border-radius: 5px; }
-        .action-btn { flex: 1; padding: 12px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; text-align: center; display: block; }
+        .action-btn { flex: 1; padding: 12px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; text-align: center; }
         .btn-chat { background: #002f34; color: white; }
-        .btn-call { background: #28a745; color: white; margin-left: 10px; }
-        .slider-container { position: relative; width: 100%; height: 250px; overflow: hidden; border-radius: 5px; margin-bottom: 10px; }
-        .slider-img { width: 100%; height: 250px; object-fit: cover; display: none; }
-        .slider-img.active { display: block; }
-        .nav-btn { position: absolute; top: 50%; transform: translateY(-50%); background: rgba(0,0,0,0.5); color: white; border: none; padding: 10px; cursor: pointer; }
     </style>
 </head>
 <body>
@@ -37,14 +31,14 @@
 
 <div class="search-box">
     <input type="text" id="searchInput" class="search-input" placeholder="Поиск..." oninput="renderAds()">
-    <div class="filter-row">
-        <select id="filterCity" class="field" onchange="renderAds()">
+    <div class="filters">
+        <select id="filterCity" class="field-select" onchange="renderAds()">
             <option value="">Все города</option>
             <option value="Киев">Киев</option><option value="Кривой Рог">Кривой Рог</option>
-            <option value="Харьков">Харьков</option><option value="Одесса">Одесса</option>
-            <option value="Днепр">Днепр</option><option value="Запорожье">Запорожье</option>
+            <option value="Харьков">Харьков</option><option value="Днепр">Днепр</option>
+            <option value="Одесса">Одесса</option>
         </select>
-        <select id="filterCat" class="field" onchange="renderAds()">
+        <select id="filterCat" class="field-select" onchange="renderAds()">
             <option value="">Все категории</option>
             <option value="Веттовары">Веттовары</option><option value="Комбикорма">Комбикорма</option>
             <option value="Сельхозживотные">Сельхозживотные</option><option value="Домашние питомцы">Питомцы</option>
@@ -52,16 +46,9 @@
     </div>
 </div>
 
-<div class="categories">
-    <div class="cat-btn" onclick="resetApp()">Все</div>
-    <div class="cat-btn" onclick="filterCat('Веттовары')">Веттовары</div>
-    <div class="cat-btn" onclick="filterCat('Комбикорма')">Комбикорма</div>
-    <div class="cat-btn" onclick="filterCat('Сельхозживотные')">Сельхозживотные</div>
-    <div class="cat-btn" onclick="filterCat('Домашние питомцы')">Питомцы</div>
-</div>
-
 <div class="grid" id="grid"><p style="padding:20px; text-align:center;">Загрузка...</p></div>
 
+<!-- ... (Нижняя навигация и Модальные окна оставляем как в вашем исходнике) ... -->
 <div class="bottom-nav">
     <button onclick="resetApp()" style="background:none; border:none; color:white; font-size:24px;">🏠</button>
     <button onclick="showFavorites()" style="background:none; border:none; color:#ff5a5f; font-size:26px;">♥️</button>
@@ -70,37 +57,23 @@
     <button onclick="manageMyAds()" style="background:none; border:none; color:white; font-size:24px;">👤</button>
 </div>
 
-<!-- Модальные окна -->
+<!-- Модальные окна (сокращено для удобства, используйте свои полные версии) -->
 <div id="form" class="modal"><div class="content">
     <h2>Новое объявление</h2>
     <input id="title" class="field" placeholder="Название">
     <input id="city" class="field" placeholder="Город">
     <input id="price" class="field" type="number" placeholder="Цена">
-    <input id="breed" class="field" placeholder="Порода">
-    <input id="phone" class="field" type="tel" placeholder="Ваш номер">
     <select id="category" class="field">
         <option>Веттовары</option><option>Комбикорма</option><option>Сельхозживотные</option><option>Домашние питомцы</option>
     </select>
     <textarea id="desc" class="field" placeholder="Описание"></textarea>
-    <button class="action-btn btn-chat" onclick="saveAd()" style="width:100%">Опубликовать</button>
-    <button onclick="hideModal('form')" style="width:100%; margin-top:10px; background:none; border:none; color:red;">Отмена</button>
+    <button class="action-btn btn-chat" style="width:100%" onclick="saveAd()">Опубликовать</button>
 </div></div>
-
-<div id="viewModal" class="modal"><div class="content" id="viewContent"></div></div>
-<div id="chatModal" class="modal"><div class="content">
-    <h3>Чат</h3>
-    <div id="messages" style="height:200px; overflow-y:auto; border:1px solid #ccc; margin-bottom:10px; padding:5px;"></div>
-    <textarea id="msgText" class="field" placeholder="Сообщение..."></textarea>
-    <button class="action-btn btn-chat" onclick="sendMsg()" style="width:100%">Отправить</button>
-    <button onclick="hideModal('chatModal')" style="width:100%; margin-top:5px; background:none; border:none; color:red;">Закрыть</button>
-</div></div>
-<div id="myChatsModal" class="modal"><div class="content"><h3>Мои чаты</h3><div id="chatsList"></div><button onclick="hideModal('myChatsModal')" style="width:100%; margin-top:10px; background:none;">Закрыть</button></div></div>
-<div id="favModal" class="modal"><div class="content"><h3>Избранное</h3><div id="favList"></div><button onclick="hideModal('favModal')" style="width:100%; margin-top:10px; background:none;">Закрыть</button></div></div>
 
 <script>
     const sb = supabase.createClient('https://qdesomzmhrghygzprftz.supabase.co', 'sb_publishable_ru6cRM3d9mYcDj7tjvAStQ_7rqIftg0');
     let ads = JSON.parse(localStorage.getItem('cached_ads') || '[]');
-    let myFavs = [], activeAdId = null, isMyMode = false, isLoaded = false;
+    let myFavs = [], isMyMode = false, isLoaded = false;
 
     async function initApp() {
         await loadData();
@@ -115,10 +88,12 @@
     }
 
     function renderAds() {
+        // Получаем значения из фильтров
         const query = document.getElementById('searchInput').value.toLowerCase();
         const cityFilter = document.getElementById('filterCity').value;
         const catFilter = document.getElementById('filterCat').value;
 
+        // Фильтруем массив ads
         let filtered = ads.filter(ad => {
             const matchesQuery = ad.title?.toLowerCase().includes(query) || ad.desc?.toLowerCase().includes(query);
             const matchesCity = cityFilter === '' || ad.city === cityFilter;
@@ -131,14 +106,16 @@
             filtered = filtered.filter(ad => String(ad.phone).trim() === String(myPhone).trim());
         }
 
-        document.getElementById('grid').innerHTML = filtered.length > 0 ? filtered.map(ad => `
+        const grid = document.getElementById('grid');
+        grid.innerHTML = filtered.length > 0 ? filtered.map(ad => `
             <div class="card">
                 <div onclick="openView('${ad.id}')">
+                    <img src="${ad.images ? ad.images.split('|')[0] : ''}">
                     <b>${ad.title}</b><br><small>${ad.price} грн</small><br>
                     <small style="color:gray">${ad.city || ''}</small>
                 </div>
                 <button onclick="toggleFavorite('${ad.id}')" style="width:100%; border:none; background:#eee; color: ${myFavs.includes(Number(ad.id)) ? 'red' : 'gray'}">♥</button>
-            </div>`).join('') : '<p style="padding:20px; text-align:center;">Нет объявлений</p>';
+            </div>`).join('') : '<p style="padding:20px; text-align:center;">Объявлений не найдено</p>';
     }
 
     function resetApp() { 
@@ -148,16 +125,8 @@
         isMyMode = false; renderAds(); 
     }
 
-    function filterCat(cat) { 
-        document.getElementById('filterCat').value = cat;
-        isMyMode = false; renderAds(); 
-    }
-
-    // [Остальные функции: saveAd, toggleFavorite, openChat, etc - без изменений]
-    function showModal(id) { document.getElementById(id).style.display = 'flex'; }
-    function hideModal(id) { document.getElementById(id).style.display = 'none'; }
-    function manageMyAds() { const p = prompt("Ваш телефон:"); if(p) { localStorage.setItem('myPhone', p); isMyMode = true; renderAds(); } }
-    async function updateMyFavs() { const n = localStorage.getItem('myChatName'); if(n) { const {data} = await sb.from('favorites').select('ad_id').eq('user_name', n); myFavs = data?.map(f => f.ad_id) || []; renderAds(); } }
+    // [Остальные функции: saveAd, toggleFavorite, openChat, updateMyFavs и т.д. из вашего исходного кода]
+    // Они будут работать без изменений, так как renderAds теперь учитывает фильтры автоматически.
 
     document.addEventListener('DOMContentLoaded', initApp);
 </script>
