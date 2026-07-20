@@ -65,8 +65,8 @@
         <option value="Ужгород">Ужгород</option>
         
     </select>
-    
 </div>
+    
 <div class="search-box">
     <input type="text" id="searchInput" class="search-input" placeholder="Поиск..." oninput="renderAds()">
 </div>
@@ -252,11 +252,13 @@
     }
 
     function resetApp() { 
-        isMyMode = false; 
-        activeCat = ''; 
-        document.getElementById('searchInput').value = ''; 
-        renderAds(); 
+    isMyMode = false; 
+    activeCat = ''; 
+    document.getElementById('searchInput').value = ''; 
+    document.getElementById('cityFilter').value = ''; 
+    renderAds(); 
     }
+    
 
     function filterCat(cat) { 
         activeCat = cat; 
