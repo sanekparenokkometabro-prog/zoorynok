@@ -198,17 +198,21 @@
     }
 
     async function loadData() {
-        try {
-            const { data, error } = await sb.from('ads').select('*').order('id', { ascending: false });
-            if (error) throw error;
-            if (data) {
-                ads = data;
-                localStorage.setItem('cached_ads', JSON.stringify(data));
-            }
-        } catch (err) {
-            console.error("Ошибка загрузки данных из Supabase:", err);
+    try {
+        console.log("Загрузка данных из Supabase..."); // Это поможет нам понять, идет ли запрос
+        const { data, error } = await sb.from('ads').select('*').order('id', { ascending: false });
+        if (error) throw error;
+        if (data) {
+            ads = data;
+            localStorage.setItem('cached_ads', JSON.stringify(data));
+            console.log("Данные успешно получены:", data.length); // Увидим количество объявлений
         }
+    } catch (err) {
+        console.error("Ошибка при загрузке:", err); // Если есть ошибка, она появится здесь
+        document.getElementById('grid').innerHTML = '<p style="padding:20px; text-align:center;">Ошибка сервера. Проверьте консоль.</p>';
     }
+    }
+    
 
 function renderAds() {
     const grid = document.getElementById('grid');
