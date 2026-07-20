@@ -10,8 +10,9 @@
         body { background: #f2f4f5; padding-bottom: 100px; width: 100%; overflow-x: hidden; }
         header { background: #002f34; color: white; padding: 15px; text-align: center; }
         .search-box { padding: 10px; background: white; }
-        .search-input { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 20px; margin-bottom: 10px; }
-        .city-select { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 20px; margin-bottom: 10px; background: #fff; }
+        .search-input { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 20px; }
+        /* Добавлено для селекта городов */
+        .city-select { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 20px; margin-top: 10px; }
         .categories { display: flex; gap: 10px; padding: 10px; overflow-x: auto; background: white; }
         .cat-btn { padding: 8px 15px; border: 1px solid #002f34; border-radius: 20px; cursor: pointer; white-space: nowrap; }
         .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 15px; }
@@ -37,30 +38,12 @@
 
 <div class="search-box">
     <input type="text" id="searchInput" class="search-input" placeholder="Поиск..." oninput="renderAds()">
+    <!-- Добавлен селект выбора города -->
     <select id="cityFilter" class="city-select" onchange="renderAds()">
         <option value="">Все города</option>
         <option value="Киев">Киев</option>
         <option value="Кривой Рог">Кривой Рог</option>
         <option value="Харьков">Харьков</option>
-        <option value="Одесса">Одесса</option>
-        <option value="Днепр">Днепр</option>
-        <option value="Запорожье">Запорожье</option>
-        <option value="Львов">Львов</option>
-        <option value="Николаев">Николаев</option>
-        <option value="Винница">Винница</option>
-        <option value="Чернигов">Чернигов</option>
-        <option value="Полтава">Полтава</option>
-        <option value="Черкассы">Черкассы</option>
-        <option value="Хмельницкий">Хмельницкий</option>
-        <option value="Черновцы">Черновцы</option>
-        <option value="Житомир">Житомир</option>
-        <option value="Сумы">Сумы</option>
-        <option value="Ровно">Ровно</option>
-        <option value="Ивано-Франковск">Ивано-Франковск</option>
-        <option value="Кропивницкий">Кропивницкий</option>
-        <option value="Тернополь">Тернополь</option>
-        <option value="Луцк">Луцк</option>
-        <option value="Ужгород">Ужгород</option>
     </select>
 </div>
 
@@ -95,23 +78,6 @@
         <option value="Харьков">
         <option value="Одесса">
         <option value="Днепр">
-        <option value="Запорожье">
-        <option value="Львов">
-        <option value="Николаев">
-        <option value="Винница">
-        <option value="Чернигов">
-        <option value="Полтава">
-        <option value="Черкассы">
-        <option value="Хмельницкий">
-        <option value="Черновцы">
-        <option value="Житомир">
-        <option value="Сумы">
-        <option value="Ровно">
-        <option value="Ивано-Франковск">
-        <option value="Кропивницкий">
-        <option value="Тернополь">
-        <option value="Луцк">
-        <option value="Ужгород">
     </datalist>
 
     <input id="price" class="field" type="number" placeholder="Цена">
@@ -165,15 +131,9 @@
     });
 
     async function initApp() {
-        const timer = setTimeout(() => {
-            if (!isLoaded) {
-                document.getElementById('grid').innerHTML = '<p style="padding:20px; text-align:center;">Ошибка подключения к базе. Проверьте настройки RLS в Supabase.</p>';
-            }
-        }, 8000);
-
+        // Запускаем загрузку
         await loadData();
-        clearTimeout(timer);
-        
+        // ВАЖНО: всегда переключаем флаг, даже если ошибка
         isLoaded = true;
         renderAds();
         updateMyFavs();
@@ -188,16 +148,17 @@
                 localStorage.setItem('cached_ads', JSON.stringify(data));
             }
         } catch (err) {
-            console.error("Ошибка загрузки данных из Supabase:", err);
+            console.error("Ошибка:", err);
         }
     }
 
     function renderAds() {
         const grid = document.getElementById('grid');
+        // Убрали проверку на isLoaded внутри, чтобы сразу рисовать кэш
+        
         const query = document.getElementById('searchInput').value.toLowerCase();
         const cityVal = document.getElementById('cityFilter').value;
-
-        // Фильтрация по поиску, категории и городу
+        
         let filtered = ads.filter(ad => {
             const matchesSearch = (ad.title?.toLowerCase().includes(query) || ad.desc?.toLowerCase().includes(query));
             const matchesCat = (activeCat === '' || ad.category === activeCat);
@@ -219,9 +180,7 @@
             <div class="card">
                 <div onclick="openView('${ad.id}')">
                     <img src="${ad.images ? ad.images.split('|')[0] : ''}" loading="lazy">
-                    <b>${ad.title}</b><br>
-                    <small>${ad.price} грн</small><br>
-                    <small style="color:#666">${ad.city || ''}</small>
+                    <b>${ad.title}</b><br><small>${ad.price} грн</small><br><small style="color:#666">${ad.city || ''}</small>
                 </div>
                 <button onclick="toggleFavorite('${ad.id}')" style="margin-top:5px; width:100%; border:none; background:#eee; color: ${myFavs.includes(Number(ad.id)) ? 'red' : 'gray'}">♥</button>
                 ${isMyMode ? `<button onclick="deleteAd('${ad.id}')" style="margin-top:5px; width:100%; border:none; background:#ffeded; color:red;">Удалить</button>` : ''}
@@ -329,20 +288,11 @@
         
         const { error } = await sb.from('ads').insert([adData]);
         if (error) { 
-            alert("Ошибка сохранения объявления. Проверьте структуру полей и RLS."); 
+            alert("Ошибка сохранения."); 
             btn.disabled = false; 
         } else { 
             alert("Успешно опубликовано!"); 
             hideModal('form'); 
-            
-            document.getElementById('title').value = '';
-            document.getElementById('price').value = '';
-            document.getElementById('desc').value = '';
-            document.getElementById('breed').value = '';
-            document.getElementById('city').value = '';
-            document.getElementById('photoInput').value = '';
-            document.getElementById('previewArea').innerHTML = '';
-            
             await loadData(); 
             renderAds(); 
         }
@@ -363,15 +313,14 @@
                 ${imgs.map((i, idx) => `<img src="${i}" class="slider-img ${idx === 0 ? 'active' : ''}">`).join('')}
                 ${imgs.length > 1 ? `<button class="nav-btn" style="left:0" onclick="moveSlide(-1)">❮</button><button class="nav-btn" style="right:0" onclick="moveSlide(1)">❯</button>` : ''}
             </div>
-            <p style="margin-top:10px;"><b>Цена:</b> ${ad.price} грн</p>
-            <p style="margin-top:5px;"><b>Город:</b> ${ad.city || 'Не указан'}</p>
-            <p style="margin-top:5px;"><b>Порода/Вид:</b> ${ad.breed || 'Не указана'}</p>
-            <p style="margin-top:10px; border-top:1px solid #eee; padding-top:10px;">${ad.desc}</p>
+            <p>Цена: ${ad.price} грн</p>
+            <p>Город: ${ad.city || 'Не указан'}</p>
+            <p>${ad.desc}</p>
             <div style="display:flex; gap:10px; margin-top:15px;">
                 <button class="action-btn btn-chat" onclick="openChat('${ad.id}')">Написать</button>
                 <a href="tel:${ad.phone}" class="action-btn btn-call" style="text-decoration:none;">Позвонить</a>
             </div>
-            <button onclick="hideModal('viewModal')" style="width:100%; margin-top:15px; background:none; border:none; color:#555; font-weight:bold;">Закрыть</button>`;
+            <button onclick="hideModal('viewModal')" style="width:100%; margin-top:15px; background:none;">Закрыть</button>`;
         showModal('viewModal');
     }
     
@@ -389,13 +338,7 @@
         hideModal('viewModal'); 
         showModal('chatModal');
         const { data } = await sb.from('messages').select('*').eq('ad_id', id).order('created_at', { ascending: true });
-        document.getElementById('messages').innerHTML = data?.map(m => `
-            <div style="margin-bottom:8px; word-break:break-word;">
-                <b>${m.sender || 'Аноним'}:</b> ${m.text}
-            </div>`).join('') || '<div style="color:gray;">Нет сообщений. Начните диалог первым!</div>';
-        
-        const box = document.getElementById('messages');
-        box.scrollTop = box.scrollHeight;
+        document.getElementById('messages').innerHTML = data?.map(m => `<div><b>${m.sender}:</b> ${m.text}</div>`).join('') || 'Нет сообщений.';
     }
 
     async function sendMsg() {
@@ -403,7 +346,7 @@
         if (!text) return;
         let name = localStorage.getItem('myChatName');
         if (!name) {
-            name = prompt("Введите ваше имя для отображения в чате:");
+            name = prompt("Ваше имя:");
             if (!name) return;
             localStorage.setItem('myChatName', name);
         }
@@ -415,5 +358,22 @@
     async function showMyChats() {
         showModal('myChatsModal');
         let name = localStorage.getItem('myChatName');
-        if (!name) {
-            document.getElementById('chatsList').innerHTML = '<div style="padding:10px; co
+        if (!name) return;
+        const { data } = await sb.from('messages').select('ad_id').eq('sender', name);
+        const uniqueIds = [...new Set(data?.map(m => m.ad_id) || [])];
+        document.getElementById('chatsList').innerHTML = uniqueIds.map(id => {
+            const ad = ads.find(a => a.id == id);
+            return `<div onclick="hideModal('myChatsModal'); openChat('${id}')">💬 ${ad ? ad.title : 'Удалено'}</div>`;
+        }).join('');
+    }
+
+    async function showFavorites() {
+        showModal('favModal');
+        document.getElementById('favList').innerHTML = myFavs.map(id => {
+            const ad = ads.find(a => a.id == id);
+            return ad ? `<div onclick="hideModal('favModal'); openView('${id}')">❤️ ${ad.title}</div>` : '';
+        }).join('');
+    }
+</script>
+</body>
+</html>
