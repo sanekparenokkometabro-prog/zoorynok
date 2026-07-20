@@ -495,13 +495,12 @@ async function showFavorites() {
 
     // 3. Логика включения:
     // Если есть хоть одно сообщение от других людей — включаем красный индикатор
-    if (messages && messages.length > 0) {
-        badge.style.display = 'block'; // Показываем красный
+        if (messages && messages.length > 0) {
+        badge.style.backgroundColor = 'red'; // Загорается красным
     } else {
-        badge.style.display = 'none';  // Скрываем (серый/прозрачный)
-    }
-    }
-    
+        badge.style.backgroundColor = 'gray'; // Остается серым
+        }
+        
 </script>
 </body>
 </html>
