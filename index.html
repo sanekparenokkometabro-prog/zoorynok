@@ -469,7 +469,7 @@ async function showFavorites() {
     }).join('');
 }
 
-    async function checkNewMessages() {
+async function checkNewMessages() {
     const name = localStorage.getItem('myChatName');
     const myPhone = localStorage.getItem('myPhone');
     const badge = document.getElementById('chatBadge');
@@ -477,7 +477,6 @@ async function showFavorites() {
 
     const { data: myAds } = await sb.from('ads').select('id').eq('phone', myPhone);
     
-    // Если объявлений нет, скрываем индикатор
     if (!myAds || myAds.length === 0) {
         badge.style.display = 'none'; 
         return;
@@ -490,13 +489,14 @@ async function showFavorites() {
         .in('ad_id', myAdIds)
         .neq('sender', name); 
 
-    // ВОТ ТУТ ЛОГИКА ИСПРАВЛЕНА:
+    // СТРОГАЯ ПРОВЕРКА:
     if (messages && messages.length > 0) {
-        badge.style.display = 'block'; // Показываем (красный)
+        badge.style.display = 'block'; 
     } else {
-        badge.style.display = 'none';  // Полностью скрываем
+        badge.style.display = 'none'; 
     }
-    }
+}
+    
           
 </script>
 </body>
