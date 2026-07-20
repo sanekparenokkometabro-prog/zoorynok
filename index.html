@@ -435,7 +435,7 @@ function renderAds() {
         
         document.getElementById('chatsList').innerHTML = uniqueIds.map(id => {
             const ad = ads.find(a => a.id == id);
-            return `<div style="padding:12px; border-bottom:1px solid #eee; cursor:pointer; font-weight:bold;" onclick="hideModal('myChatsModal'); openChat('${id}')">
+             return `<div onclick="markAsRead('${id}'); openChat('${id}')" style="padding:12px; border-bottom:1px solid #eee; cursor:pointer; font-weight:bold;">
                 💬 ${ad ? ad.title : 'Удаленное объявление'}
             </div>`;
         }).join('') || '<div style="padding:10px; color:gray;">Нет активных диалогов</div>';
