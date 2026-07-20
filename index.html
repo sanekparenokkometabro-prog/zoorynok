@@ -33,16 +33,15 @@
 <body>
 
 <header><h1>ЗооРынок 🐾</h1></header>
-
 <div class="search-box">
-    <input type="text" id="searchInput" class="search-input" placeholder="Поиск..." oninput="renderAds()" style="margin-bottom: 10px;">
+    <!-- Оставляем только один input -->
+    <input type="text" id="searchInput" class="search-input" placeholder="Поиск по названию..." oninput="renderAds()" style="margin-bottom: 10px;">
     
+    <!-- И один select для города -->
     <select id="cityFilter" class="search-input" onchange="renderAds()">
         <option value="">Все города</option>
         <option value="Киев">Киев</option>
         <option value="Кривой Рог">Кривой Рог</option>
-        <option value="Лозоватка">Лозоватка</option>
-        <option value="Марьяновка">Марьяновка</option>
         <option value="Харьков">Харьков</option>
         <option value="Одесса">Одесса</option>
         <option value="Днепр">Днепр</option>
@@ -63,9 +62,9 @@
         <option value="Тернополь">Тернополь</option>
         <option value="Луцк">Луцк</option>
         <option value="Ужгород">Ужгород</option>
-        
     </select>
 </div>
+    
     
 <div class="search-box">
     <input type="text" id="searchInput" class="search-input" placeholder="Поиск..." oninput="renderAds()">
@@ -211,24 +210,42 @@
         }
     }
 
-    function renderAds() {
-        const grid = document.getElementById('grid');
-        if (!isLoaded && ads.length === 0) return;
+function renderAds() {
+    const grid = document.getElementById('grid');
+    if (!isLoaded && ads.length === 0) return;
 
-        const query = document.getElementById('searchInput').value.toLowerCase();
-        let filtered = ads.filter(ad => (ad.title?.toLowerCase().includes(query) || ad.desc?.toLowerCase().includes(query)) && (activeCat === '' || ad.category === activeCat));
+    const query = document.getElementById('searchInput').value.toLowerCase();
+    const cityQuery = document.getElementById('cityFilter').value; 
 
-        // Добавляем получение города
-        const cityFilterValue = document.getElementById('cityFilter').value;
+    let filtered = ads.filter(ad => {
+        const matchesSearch = (ad.title?.toLowerCase().includes(query) || ad.desc?.toLowerCase().includes(query));
+        const matchesCat = (activeCat === '' || ad.category === activeCat);
+        const matchesCity = (cityQuery === '' || ad.city === cityQuery);
+        
+        return matchesSearch && matchesCat && matchesCity;
+    });
 
-        let filtered = ads.filter(ad => {
-            const matchesSearch = (ad.title?.toLowerCase().includes(query) || ad.desc?.toLowerCase().includes(query));
-            const matchesCat = (activeCat === '' || ad.category === activeCat);
-            // Добавляем саму проверку города
-            const matchesCity = (cityFilterValue === '' || ad.city === cityFilterValue);
-            
-            return matchesSearch && matchesCat && matchesCity;
-        });
+    if (isMyMode) {
+        const myPhone = localStorage.getItem('myPhone');
+        filtered = filtered.filter(ad => String(ad.phone).trim() === String(myPhone).trim());
+    }
+
+    if (filtered.length === 0) {
+        grid.innerHTML = '<p style="padding:20px; text-align:center;">Объявлений пока нет</p>';
+        return;
+    }
+
+    grid.innerHTML = filtered.map(ad => `
+        <div class="card">
+            <div onclick="openView('${ad.id}')">
+                <img src="${ad.images ? ad.images.split('|')[0] : ''}" loading="lazy">
+                <b>${ad.title}</b><br><small>${ad.price} грн</small>
+            </div>
+            <button onclick="toggleFavorite('${ad.id}')" style="margin-top:5px; width:100%; border:none; background:#eee; color: ${myFavs.includes(Number(ad.id)) ? 'red' : 'gray'}">♥</button>
+            ${isMyMode ? `<button onclick="deleteAd('${ad.id}')" style="margin-top:5px; width:100%; border:none; background:#ffeded; color:red;">Удалить</button>` : ''}
+        </div>`).join('');
+}
+    
         
         if (isMyMode) {
             const myPhone = localStorage.getItem('myPhone');
