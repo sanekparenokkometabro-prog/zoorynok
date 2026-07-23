@@ -445,7 +445,7 @@ function renderAds() {
     openChat(activeAdId);
     }
 
-async function showMyChats() {
+    async function showMyChats() {
     showModal('myChatsModal');
     let name = localStorage.getItem('myChatName');
     if (!name) {
@@ -453,22 +453,26 @@ async function showMyChats() {
         return;
     }
 
-    // Забираем все сообщения из базы, чтобы видеть все диалоги, где есть активность
-    const { data } = await sb.from('messages').select('ad_id, sender, is_read');
+    // Забираем все сообщения с полями ad_id, sender, is_read
+    const { data, error } = await sb.from('messages').select('ad_id, sender, is_read');
     
-    if (!data || data.length === 0) {
+    if (error || !data || data.length === 0) {
         document.getElementById('chatsList').innerHTML = '<div style="padding:10px; color:gray;">Нет активных диалогов</div>';
         return;
     }
 
-    // Собираем все уникальные id объявлений, по которым вообще есть переписки
     const uniqueIds = [...new Set(data.map(m => m.ad_id))];
 
     document.getElementById('chatsList').innerHTML = uniqueIds.map(id => {
         const ad = ads.find(a => a.id == id);
         
-        // Проверяем, есть ли непрочитанные сообщения (где отправитель НЕ вы)
-        const hasUnread = data.some(m => m.ad_id == id && m.sender !== name && m.is_read === false);
+        // Проверяем: есть ли непрочитанные (is_read === false или is_read === null) 
+        // И при этом отправитель НЕ равен нашему текущему имени (срезаем пробелы для надежности)
+        const hasUnread = data.some(m => 
+            m.ad_id == id && 
+            m.sender?.trim() !== name?.trim() && 
+            (m.is_read === false || m.is_read === null)
+        );
 
         return `
             <div onclick="openChat('${id}')" style="padding:12px; border-bottom:1px solid #eee; cursor:pointer; display: flex; justify-content: space-between; align-items: center;">
@@ -477,8 +481,8 @@ async function showMyChats() {
             </div>
         `;
     }).join('') || '<div style="padding:10px; color:gray;">Нет активных диалогов</div>';
-}
-      
+    }
+    
 async function showFavorites() {
     showModal('favModal');
     
