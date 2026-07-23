@@ -80,7 +80,7 @@
     <button onclick="resetApp()" style="background:none; border:none; color:white; font-size:24px;">🏠</button>
     <button onclick="showFavorites()" style="background:none; border:none; color:#ff5a5f; font-size:26px;">♥️</button>
     <button class="btn-add-center" onclick="showModal('form')">+</button>
-    <button onclick="showMyChats()" style="background:none; border:none; color:white; font-size:24px; position:relative;">
+    <button id="chatNavBtn"onclick="showMyChats()" style="background:none; border:none; color:white; font-size:24px; position:relative;">
     💬<span id="chatBadge" style="display:none; position:absolute; top:0; right:0; background:red; width:10px; height:10px; border-radius:50%;"></span>
     </button>
     
@@ -527,26 +527,16 @@ async function showFavorites() {
 // Функция управления точкой на иконке в нижней строке
 async function updateChatIconIndicator() {
     const hasUnread = await checkUnreadMessages();
-    const iconContainer = document.getElementById('chatNavBtn'); 
-    if (!iconContainer) return;
-
-    let dot = iconContainer.querySelector('.unread-dot');
+    const badge = document.getElementById('chatBadge');
+    if (!badge) return;
 
     if (hasUnread) {
-        if (!dot) {
-            dot = document.createElement('span');
-            dot.className = 'unread-dot';
-            dot.style.cssText = 'position: absolute; top: 5px; right: 5px; width: 10px; height: 10px; background-color: #ff3b30; border-radius: 50%; display: inline-block;';
-            if (getComputedStyle(iconContainer).position === 'static') {
-                iconContainer.style.position = 'relative';
-            }
-            iconContainer.appendChild(dot);
-        }
+        badge.style.display = 'inline-block'; // Показывает красную точку
     } else {
-        if (dot) dot.remove();
+        badge.style.display = 'none'; // Скрывает точку, когда всё прочитано
     }
 }
-    
+     
 </script>
 </body>
 </html>
