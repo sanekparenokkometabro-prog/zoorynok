@@ -482,6 +482,7 @@ function renderAds() {
         `;
     }).join('') || '<div style="padding:10px; color:gray;">Нет активных диалогов</div>';
     }
+    updateChatIconIndicator();
     
 async function showFavorites() {
     showModal('favModal');
@@ -509,6 +510,41 @@ async function showFavorites() {
             ❤️ <b>${ad.title}</b> — ${ad.price} грн
         </div>`;
     }).join('');
+}
+    async function checkUnreadMessages() {
+    let name = localStorage.getItem('myChatName');
+    if (!name) return false;
+
+    const { data } = await sb.from('messages').select('ad_id, sender, is_read');
+    if (!data || data.length === 0) return false;
+
+    return data.some(m => 
+        m.sender?.trim() !== name?.trim() && 
+        (m.is_read === false || m.is_read === null)
+    );
+}
+
+// Функция управления точкой на иконке в нижней строке
+async function updateChatIconIndicator() {
+    const hasUnread = await checkUnreadMessages();
+    const iconContainer = document.getElementById('chatNavBtn'); 
+    if (!iconContainer) return;
+
+    let dot = iconContainer.querySelector('.unread-dot');
+
+    if (hasUnread) {
+        if (!dot) {
+            dot = document.createElement('span');
+            dot.className = 'unread-dot';
+            dot.style.cssText = 'position: absolute; top: 5px; right: 5px; width: 10px; height: 10px; background-color: #ff3b30; border-radius: 50%; display: inline-block;';
+            if (getComputedStyle(iconContainer).position === 'static') {
+                iconContainer.style.position = 'relative';
+            }
+            iconContainer.appendChild(dot);
+        }
+    } else {
+        if (dot) dot.remove();
+    }
 }
     
 </script>
