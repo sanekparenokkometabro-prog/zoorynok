@@ -537,7 +537,17 @@ async function updateChatIconIndicator() {
         badge.style.display = 'none'; // Скрывает точку, когда всё прочитано
     }
 }
-     
+
+    // Автоматическая проверка новых сообщений в реальном времени через Supabase Realtime
+if (typeof sb !== 'undefined') {
+    sb.channel('public:messages')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, payload => {
+          // Как только в таблицу добавляется новое сообщение, сразу обновляем индикатор
+          updateChatIconIndicator();
+      })
+      .subscribe();
+}
+    
 </script>
 </body>
 </html>
