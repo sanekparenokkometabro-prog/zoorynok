@@ -394,19 +394,20 @@ function renderAds() {
     }
 
     async function openChat(id) {
-    activeAdId = id;
+    activeAdId = id; // Обязательно фиксируем ID текущего активного объявления
     hideModal('viewModal');
-    hideModal('chatModal');
+    hideModal('myChatsModal'); // Закрываем модалку списка чатов, если она была открыта
+    showModal('chatModal');
     
     let name = localStorage.getItem('myChatName') || '';
 
-    // 1. Помечаем сообщения этого чата как прочитанные (где отправитель НЕ текущий пользователь)
+    // Помечаем сообщения прочитанными только если они адресованы нам (не наши)
     await sb.from('messages')
         .update({ is_read: true })
         .eq('ad_id', id)
         .neq('sender', name);
 
-    // 2. Загружаем сообщения для отображения
+    // Загружаем сообщения для отображения
     const { data } = await sb.from('messages').select('*').eq('ad_id', id).order('created_at', { ascending: true });
     
     document.getElementById('messages').innerHTML = data?.map(m => `
@@ -427,7 +428,12 @@ function renderAds() {
         if (!name) return;
         localStorage.setItem('myChatName', name);
     }
-    // Добавляем флаг is_read: false для нового сообщения
+    
+    if (!activeAdId) {
+        alert("Ошибка: не выбран чат!");
+        return;
+    }
+
     await sb.from('messages').insert([{ 
         ad_id: activeAdId, 
         sender: name, 
@@ -438,7 +444,6 @@ function renderAds() {
     document.getElementById('msgText').value = '';
     openChat(activeAdId);
     }
-    
 
 async function showMyChats() {
     showModal('myChatsModal');
@@ -448,8 +453,7 @@ async function showMyChats() {
         return;
     }
 
-    // Получаем все сообщения, где пользователь либо отправитель, либо это объявления владельца 
-    // (в зависимости от вашей логики, тут берем те, где задействован name)
+    // Забираем все сообщения из базы, чтобы видеть все диалоги, где есть активность
     const { data } = await sb.from('messages').select('ad_id, sender, is_read');
     
     if (!data || data.length === 0) {
@@ -457,13 +461,13 @@ async function showMyChats() {
         return;
     }
 
-    // Уникальные ID объявлений, в которых участвует пользователь
+    // Собираем все уникальные id объявлений, по которым вообще есть переписки
     const uniqueIds = [...new Set(data.map(m => m.ad_id))];
 
     document.getElementById('chatsList').innerHTML = uniqueIds.map(id => {
         const ad = ads.find(a => a.id == id);
         
-        // Проверяем, есть ли непрочитанные сообщения от других пользователей в этом чате
+        // Проверяем, есть ли непрочитанные сообщения (где отправитель НЕ вы)
         const hasUnread = data.some(m => m.ad_id == id && m.sender !== name && m.is_read === false);
 
         return `
@@ -474,8 +478,7 @@ async function showMyChats() {
         `;
     }).join('') || '<div style="padding:10px; color:gray;">Нет активных диалогов</div>';
 }
-    
-
+      
 async function showFavorites() {
     showModal('favModal');
     
