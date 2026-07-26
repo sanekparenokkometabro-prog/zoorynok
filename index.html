@@ -655,15 +655,22 @@ if (typeof sb !== 'undefined') {
       })
       .subscribe();
 }
-    let currentModalImages = [];
+ let currentModalImages = [];
 let currentModalIndex = 0;
-let panzoomInstance = null; // Переменная для хранения экземпляра Panzoom
+
+let scale = 1;
+let panning = false;
+let pointX = 0;
+let pointY = 0;
+let startX = 0;
+let startY = 0;
+let initialDistance = 0;
+
+const modalImg = document.getElementById('modalImage');
 
 function openPhotoModal(imgElement) {
     const modal = document.getElementById('photoModal');
-    const modalImg = document.getElementById('modalImage');
     
-    // 1. Находим все картинки
     const sliderImgs = document.querySelectorAll('#viewContent .slider-img, #viewContent img');
     currentModalImages = Array.from(sliderImgs).map(img => img.src);
     
@@ -671,43 +678,31 @@ function openPhotoModal(imgElement) {
         currentModalImages = [imgElement.src];
     }
     
-    // 2. Определяем индекс
     currentModalIndex = currentModalImages.indexOf(imgElement.src);
     if (currentModalIndex === -1) currentModalIndex = 0;
     
-    // 3. Показываем окно
+    // Сбрасываем зум при открытии новой фото
+    resetZoom();
+    
     modal.style.display = 'flex';
     modalImg.src = currentModalImages[currentModalIndex];
+}
 
-    // 4. ИНИЦИАЛИЗИРУЕМ PANZOOM (вот тут происходит магия!)
-    // Если она уже была создана, удаляем старую
-    if (panzoomInstance) {
-        panzoomInstance.destroy();
-    }
-    // Создаем новую для текущей картинки
-    panzoomInstance = Panzoom(modalImg, {
-        maxScale: 4, // Максимальное увеличение (в 4 раза)
-        minScale: 1, // Минимальное (исходный размер)
-        contain: 'inside', // Не давать картинке уходить за границы экрана
-        startScale: 1,
-        // Важно: разрешить взаимодействие
-        disablePan: false,
-        disableZoom: false
-    });
-    
-    // Добавляем слушатель событий колесика мыши (для ПК)
-    modalImg.parentElement.addEventListener('wheel', panzoomInstance.zoomWithWheel);
+function resetZoom() {
+    scale = 1;
+    pointX = 0;
+    pointY = 0;
+    updateImageTransform();
+}
+
+function updateImageTransform() {
+    modalImg.style.transform = `translate(${pointX}px, ${pointY}px) scale(${scale})`;
 }
 
 function changeModalSlide(direction) {
     if (currentModalImages.length === 0) return;
     
-    // 1. ОБЯЗАТЕЛЬНО УНИЧТОЖАЕМ PANZOOM ПЕРЕД СМЕНОЙ СЛАЙДА
-    if (panzoomInstance) {
-        panzoomInstance.destroy();
-        panzoomInstance = null;
-    }
-
+    resetZoom();
     currentModalIndex += direction;
     
     if (currentModalIndex >= currentModalImages.length) {
@@ -716,30 +711,68 @@ function changeModalSlide(direction) {
         currentModalIndex = currentModalImages.length - 1;
     }
     
-    // 2. Меняем картинку и переинициализируем Panzoom для новой
-    const modalImg = document.getElementById('modalImage');
     modalImg.src = currentModalImages[currentModalIndex];
-    
-    // Ждем немного (микросекунду), чтобы новая картинка загрузилась, и создаем Panzoom
-    setTimeout(() => {
-         if (modal.style.display === 'flex') {
-             panzoomInstance = Panzoom(modalImg, { maxScale: 4, contain: 'inside' });
-             modalImg.parentElement.addEventListener('wheel', panzoomInstance.zoomWithWheel);
-         }
-    }, 50);
 }
 
 function closePhotoModal() {
-    // 1. Скрываем окно
-    const modal = document.getElementById('photoModal');
-    modal.style.display = 'none';
-    
-    // 2. УНИЧТОЖАЕМ PANZOOM, ЧТОБЫ СБРОСИТЬ ЗУМ И ОЧИСТИТЬ ПАМЯТЬ
-    if (panzoomInstance) {
-        panzoomInstance.destroy();
-        panzoomInstance = null;
-    }
+    document.getElementById('photoModal').style.display = 'none';
+    resetZoom();
 }
+
+// === ОБРАБОТКА ЖЕСТОВ (ЩИПКИ И ПЕРЕТАСКИВАНИЕ) ===
+
+modalImg.addEventListener('touchstart', (e) => {
+    if (e.touches.length === 2) {
+        // Начало щипка двумя пальцами
+        initialDistance = Math.hypot(
+            e.touches[0].pageX - e.touches[1].pageX,
+            e.touches[0].pageY - e.touches[1].pageY
+        );
+    } else if (e.touches.length === 1 && scale > 1) {
+        // Перемещение одним пальцем, если картинка увеличена
+        panning = true;
+        startX = e.touches[0].clientX - pointX;
+        startY = e.touches[0].clientY - pointY;
+    }
+});
+
+modalImg.addEventListener('touchmove', (e) => {
+    e.preventDefault(); // Предотвращаем скролл страницы
+    
+    if (e.touches.length === 2) {
+        // Зум двумя пальцами
+        let currentDistance = Math.hypot(
+            e.touches[0].pageX - e.touches[1].pageX,
+            e.touches[0].pageY - e.touches[1].pageY
+        );
+        
+        let factor = currentDistance / initialDistance;
+        initialDistance = currentDistance;
+        
+        scale *= factor;
+        scale = Math.min(Math.max(scale, 1), 4); // Ограничение: от 1x до 4x
+        updateImageTransform();
+        
+    } else if (e.touches.length === 1 && panning && scale > 1) {
+        // Перетаскивание увеличенной картинки
+        pointX = e.touches[0].clientX - startX;
+        pointY = e.touches[0].clientY - startY;
+        updateImageTransform();
+    }
+}, { passive: false });
+
+modalImg.addEventListener('touchend', (e) => {
+    if (e.touches.length < 2) {
+        initialDistance = 0;
+    }
+    if (e.touches.length === 0) {
+        panning = false;
+    }
+    // Если случайно уменьшили меньше исходного — возвращаем к 1x
+    if (scale < 1) {
+        resetZoom();
+    }
+});    
        
 </script>
 </body>
