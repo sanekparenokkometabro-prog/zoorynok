@@ -32,7 +32,7 @@
 .photo-modal {
     display: none;
     position: fixed;
-    z-index: 99999; /* Чтобы фото было поверх вообще всех окон */
+    z-index: 99999;
     left: 0;
     top: 0;
     width: 100%;
@@ -40,36 +40,47 @@
     background-color: rgba(0, 0, 0, 0.95);
     justify-content: center;
     align-items: center;
-    overflow: auto; /* Позволяет прокручивать и увеличивать картинку */
+    overflow: auto; /* Позволяет приближать и прокручивать фото */
 }
 
 .photo-modal-content {
     margin: auto;
     display: block;
-    max-width: 95%;
-    max-height: 95%;
+    max-width: 90%;
+    max-height: 90%;
     object-fit: contain;
-    cursor: zoom-in;
+    transition: transform 0.2s;
+    touch-action: pan-x pan-y pinch-zoom; /* Разрешает зум пальцами на мобильных */
 }
-    .photo-modal-close {
-        position: absolute;
-        top: 20px;
-        right: 30px;
-        color: #fff;
-        font-size: 40px;
-        font-weight: bold;
-        cursor: pointer;
-    }
+
+/* Кнопки «влево-вправо» поверх увеличенного фото */
+.modal-nav-btn {
+    position: fixed;
+    top: 50%;
+    transform: translateY(-50%);
+    background-color: rgba(0, 0, 0, 0.5);
+    color: white;
+    border: none;
+    font-size: 30px;
+    padding: 15px 20px;
+    cursor: pointer;
+    z-index: 100000;
+    border-radius: 5px;
+}
+.modal-prev { left: 10px; }
+.modal-next { right: 10px; }       
     
     </style>
 </head>
 <body>
+    
     <div id="photoModal" class="photo-modal" onclick="closePhotoModal()">
-    <span class="photo-modal-close">&times;</span>
-    <img class="photo-modal-content" id="modalImage" alt="Увеличенное фото">
+    <span class="photo-modal-close" onclick="closePhotoModal()">&times;</span>
+    <button class="modal-nav-btn modal-prev" onclick="event.stopPropagation(); changeModalSlide(-1)">&#10094;</button>
+    <img class="photo-modal-content" id="modalImage" onclick="event.stopPropagation()">
+    <button class="modal-nav-btn modal-next" onclick="event.stopPropagation(); changeModalSlide(1)">&#10095;</button>
     </div>
     
-
 <header><h1>ЗооРынок 🐾</h1></header>
 
 <div class="search-box">
@@ -585,16 +596,42 @@ if (typeof sb !== 'undefined') {
       })
       .subscribe();
 }
-    function openPhotoModal(imgElement) {
+    let currentModalImages = [];
+let currentModalIndex = 0;
+
+function openPhotoModal(imgElement) {
     const modal = document.getElementById('photoModal');
     const modalImg = document.getElementById('modalImage');
+    
+    const sliderImgs = document.querySelectorAll('#viewContent .slider-img, #viewContent img');
+    currentModalImages = Array.from(sliderImgs).map(img => img.src);
+    
+    if (currentModalImages.length === 0) {
+        currentModalImages = [imgElement.src];
+    }
+    
+    currentModalIndex = currentModalImages.indexOf(imgElement.src);
+    if (currentModalIndex === -1) currentModalIndex = 0;
+    
     modal.style.display = 'flex';
-    modalImg.src = imgElement.src;
+    modalImg.src = currentModalImages[currentModalIndex];
+}
+
+function changeModalSlide(direction) {
+    if (currentModalImages.length === 0) return;
+    currentModalIndex += direction;
+    
+    if (currentModalIndex >= currentModalImages.length) {
+        currentModalIndex = 0;
+    } else if (currentModalIndex < 0) {
+        currentModalIndex = currentModalImages.length - 1;
+    }
+    
+    document.getElementById('modalImage').src = currentModalImages[currentModalIndex];
 }
 
 function closePhotoModal() {
-    const modal = document.getElementById('photoModal');
-    modal.style.display = 'none';
+    document.getElementById('photoModal').style.display = 'none';
 }
     
 </script>
