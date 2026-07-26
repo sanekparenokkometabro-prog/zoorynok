@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>ЗооРынок 🐾</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://unpkg.com/@panzoom/panzoom@4.5.1/dist/panzoom.min.js"></script>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: sans-serif; }
         body { background: #f2f4f5; padding-bottom: 100px; width: 100%; overflow-x: hidden; }
@@ -28,9 +29,8 @@
         .slider-img { width: 100%; height: 250px; object-fit: cover; display: none; }
         .slider-img.active { display: block; }
         .nav-btn { position: absolute; top: 50%; transform: translateY(-50%); background: rgba(0,0,0,0.5); color: white; border: none; padding: 10px; cursor: pointer; }
-            /* Стили для увеличенного просмотра фото */
-/* Модальное окно для фото */
-.photo-modal {
+        
+    .photo-modal {
     display: none;
     position: fixed;
     z-index: 99999;
@@ -39,39 +39,32 @@
     width: 100%;
     height: 100%;
     background-color: rgba(0, 0, 0, 0.98);
-    /* Включаем скролл внутри окна, чтобы можно было двигать увеличенную картинку */
-    overflow: auto; 
     justify-content: center;
     align-items: center;
-    /* Отключаем стандартное поведение браузера для свайпов */
-    overscroll-behavior: contain;
+    /* Важно: отключаем стандартный скролл модального окна */
+    overflow: hidden;
 }
 
-/* Контейнер для картинки, который позволяет зумить */
 .photo-modal-container {
-    margin: auto;
+    /* Контейнер занимает весь экран, картинка будет внутри него */
+    width: 100%;
+    height: 100%;
     display: flex;
     justify-content: center;
     align-items: center;
-    width: 100%;
-    height: 100%;
-    /* Важно: разрешаем зум и панорамирование (движение пальцами) */
-    touch-action: pan-x pan-y pinch-zoom;
 }
 
-/* Сама картинка */
 .photo-modal-content {
-    display: block;
-    /* Максимальные размеры, чтобы фото помещалось при открытии */
+    /* Картинка будет масштабироваться библиотекой */
     max-width: 90%;
     max-height: 90%;
     object-fit: contain;
-    /* Плавный переход при открытии/закрытии */
-    transition: transform 0.3s ease;
-    
-    /* На всякий случай разрешаем браузеру обрабатывать трансформации */
-    will-change: transform;
+    cursor: grab; /* Курсор меняется, показывая, что можно двигать */
 }
+
+.photo-modal-content.is-grabbing {
+    cursor: grabbing; /* Курсор при перетаскивании */
+}        
         
 /* Кнопки «влево-вправо» поверх увеличенного фото */
 .modal-nav-btn {
@@ -664,11 +657,13 @@ if (typeof sb !== 'undefined') {
 }
     let currentModalImages = [];
 let currentModalIndex = 0;
+let panzoomInstance = null; // Переменная для хранения экземпляра Panzoom
 
 function openPhotoModal(imgElement) {
     const modal = document.getElementById('photoModal');
     const modalImg = document.getElementById('modalImage');
     
+    // 1. Находим все картинки
     const sliderImgs = document.querySelectorAll('#viewContent .slider-img, #viewContent img');
     currentModalImages = Array.from(sliderImgs).map(img => img.src);
     
@@ -676,15 +671,43 @@ function openPhotoModal(imgElement) {
         currentModalImages = [imgElement.src];
     }
     
+    // 2. Определяем индекс
     currentModalIndex = currentModalImages.indexOf(imgElement.src);
     if (currentModalIndex === -1) currentModalIndex = 0;
     
+    // 3. Показываем окно
     modal.style.display = 'flex';
     modalImg.src = currentModalImages[currentModalIndex];
+
+    // 4. ИНИЦИАЛИЗИРУЕМ PANZOOM (вот тут происходит магия!)
+    // Если она уже была создана, удаляем старую
+    if (panzoomInstance) {
+        panzoomInstance.destroy();
+    }
+    // Создаем новую для текущей картинки
+    panzoomInstance = Panzoom(modalImg, {
+        maxScale: 4, // Максимальное увеличение (в 4 раза)
+        minScale: 1, // Минимальное (исходный размер)
+        contain: 'inside', // Не давать картинке уходить за границы экрана
+        startScale: 1,
+        // Важно: разрешить взаимодействие
+        disablePan: false,
+        disableZoom: false
+    });
+    
+    // Добавляем слушатель событий колесика мыши (для ПК)
+    modalImg.parentElement.addEventListener('wheel', panzoomInstance.zoomWithWheel);
 }
 
 function changeModalSlide(direction) {
     if (currentModalImages.length === 0) return;
+    
+    // 1. ОБЯЗАТЕЛЬНО УНИЧТОЖАЕМ PANZOOM ПЕРЕД СМЕНОЙ СЛАЙДА
+    if (panzoomInstance) {
+        panzoomInstance.destroy();
+        panzoomInstance = null;
+    }
+
     currentModalIndex += direction;
     
     if (currentModalIndex >= currentModalImages.length) {
@@ -693,13 +716,31 @@ function changeModalSlide(direction) {
         currentModalIndex = currentModalImages.length - 1;
     }
     
-    document.getElementById('modalImage').src = currentModalImages[currentModalIndex];
+    // 2. Меняем картинку и переинициализируем Panzoom для новой
+    const modalImg = document.getElementById('modalImage');
+    modalImg.src = currentModalImages[currentModalIndex];
+    
+    // Ждем немного (микросекунду), чтобы новая картинка загрузилась, и создаем Panzoom
+    setTimeout(() => {
+         if (modal.style.display === 'flex') {
+             panzoomInstance = Panzoom(modalImg, { maxScale: 4, contain: 'inside' });
+             modalImg.parentElement.addEventListener('wheel', panzoomInstance.zoomWithWheel);
+         }
+    }, 50);
 }
 
 function closePhotoModal() {
-    document.getElementById('photoModal').style.display = 'none';
-}
+    // 1. Скрываем окно
+    const modal = document.getElementById('photoModal');
+    modal.style.display = 'none';
     
+    // 2. УНИЧТОЖАЕМ PANZOOM, ЧТОБЫ СБРОСИТЬ ЗУМ И ОЧИСТИТЬ ПАМЯТЬ
+    if (panzoomInstance) {
+        panzoomInstance.destroy();
+        panzoomInstance = null;
+    }
+}
+       
 </script>
 </body>
 </html>
