@@ -70,24 +70,42 @@
 .modal-prev { left: 10px; }
 .modal-next { right: 10px; }       
 
+/* Аккуратный красный крестик */
 .photo-modal-close {
     position: fixed;
-    top: 20px;
-    right: 30px;
-    color: #ff0000 !important; /* Ярко-красный цвет */
-    font-size: 60px !important;  /* Большой размер */
+    top: 15px;
+    right: 20px;
+    color: #ff0000 !important;
+    font-size: 36px !important;  /* Уменьшили размер крестика */
     font-weight: bold;
     cursor: pointer;
-    z-index: 999999;             /* Поверх абсолютно всего */
-    background: rgba(0, 0, 0, 0.5); /* Полупрозрачный фон, чтобы точно не потеряться */
-    width: 60px;
-    height: 60px;
+    z-index: 999999;
+    background: rgba(0, 0, 0, 0.5);
+    width: 45px;                 /* Уменьшили размер круглой кнопки */
+    height: 45px;
     display: flex;
     align-items: center;
     justify-content: center;
-    border-radius: 50%;         /* Круглая аккуратная кнопка */
+    border-radius: 50%;
     line-height: 1;
 }
+
+/* Компактные кнопки «влево-вправо» */
+.modal-nav-btn {
+    position: fixed;
+    top: 50%;
+    transform: translateY(-50%);
+    background-color: rgba(0, 0, 0, 0.4);
+    color: white;
+    border: none;
+    font-size: 20px;             /* Сделали стрелочки заметно меньше */
+    padding: 10px 14px;          /* Уменьшили саму кнопку */
+    cursor: pointer;
+    z-index: 100000;
+    border-radius: 50%;          /* Сделали их круглыми и аккуратными */
+}
+.modal-prev { left: 10px; }
+.modal-next { right: 10px; }       
                
     </style>
 </head>
