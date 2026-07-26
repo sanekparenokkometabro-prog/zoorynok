@@ -28,9 +28,43 @@
         .slider-img { width: 100%; height: 250px; object-fit: cover; display: none; }
         .slider-img.active { display: block; }
         .nav-btn { position: absolute; top: 50%; transform: translateY(-50%); background: rgba(0,0,0,0.5); color: white; border: none; padding: 10px; cursor: pointer; }
+            /* Стили для увеличенного просмотра фото */
+    .photo-modal {
+        display: none;
+        position: fixed;
+        z-index: 1000;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.9);
+        justify-content: center;
+        align-items: center;
+    }
+    .photo-modal-content {
+        max-width: 90%;
+        max-height: 90%;
+        object-fit: contain;
+        border-radius: 8px;
+    }
+    .photo-modal-close {
+        position: absolute;
+        top: 20px;
+        right: 30px;
+        color: #fff;
+        font-size: 40px;
+        font-weight: bold;
+        cursor: pointer;
+    }
+    
     </style>
 </head>
 <body>
+    <div id="photoModal" class="photo-modal" onclick="closePhotoModal()">
+    <span class="photo-modal-close">&times;</span>
+    <img class="photo-modal-content" id="modalImage" alt="Увеличенное фото">
+    </div>
+    
 
 <header><h1>ЗооРынок 🐾</h1></header>
 
@@ -546,6 +580,17 @@ if (typeof sb !== 'undefined') {
           updateChatIconIndicator();
       })
       .subscribe();
+}
+    function openPhotoModal(imgElement) {
+    const modal = document.getElementById('photoModal');
+    const modalImg = document.getElementById('modalImage');
+    modal.style.display = 'flex';
+    modalImg.src = imgElement.src;
+}
+
+function closePhotoModal() {
+    const modal = document.getElementById('photoModal');
+    modal.style.display = 'none';
 }
     
 </script>
