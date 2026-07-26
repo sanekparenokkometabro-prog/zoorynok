@@ -263,7 +263,7 @@ function renderAds() {
     grid.innerHTML = filtered.map(ad => `
         <div class="card">
             <div onclick="openView('${ad.id}')">
-                <img src="${ad.images ? ad.images.split('|')[0] : ''}" loading="lazy">
+                <img src="${ad.images ? ad.images[0] : ad.image}" onclick="openPhotoModal(this); event.stopPropagation();" style="cursor: pointer;" alt="...">
                 <b>${ad.title}</b><br><small>${ad.price} грн</small>
             </div>
             <button onclick="toggleFavorite('${ad.id}')" style="margin-top:5px; width:100%; border:none; background:#eee; color: ${myFavs.includes(Number(ad.id)) ? 'red' : 'gray'}">♥</button>
