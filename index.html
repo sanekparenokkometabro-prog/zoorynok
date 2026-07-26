@@ -29,6 +29,7 @@
         .slider-img.active { display: block; }
         .nav-btn { position: absolute; top: 50%; transform: translateY(-50%); background: rgba(0,0,0,0.5); color: white; border: none; padding: 10px; cursor: pointer; }
             /* Стили для увеличенного просмотра фото */
+/* Модальное окно для фото */
 .photo-modal {
     display: none;
     position: fixed;
@@ -37,22 +38,41 @@
     top: 0;
     width: 100%;
     height: 100%;
-    background-color: rgba(0, 0, 0, 0.95);
+    background-color: rgba(0, 0, 0, 0.98);
+    /* Включаем скролл внутри окна, чтобы можно было двигать увеличенную картинку */
+    overflow: auto; 
     justify-content: center;
     align-items: center;
-    overflow: auto; /* Позволяет приближать и прокручивать фото */
+    /* Отключаем стандартное поведение браузера для свайпов */
+    overscroll-behavior: contain;
 }
 
-.photo-modal-content {
+/* Контейнер для картинки, который позволяет зумить */
+.photo-modal-container {
     margin: auto;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    height: 100%;
+    /* Важно: разрешаем зум и панорамирование (движение пальцами) */
+    touch-action: pan-x pan-y pinch-zoom;
+}
+
+/* Сама картинка */
+.photo-modal-content {
     display: block;
+    /* Максимальные размеры, чтобы фото помещалось при открытии */
     max-width: 90%;
     max-height: 90%;
     object-fit: contain;
-    transition: transform 0.2s;
-    touch-action: pan-x pan-y pinch-zoom; /* Разрешает зум пальцами на мобильных */
+    /* Плавный переход при открытии/закрытии */
+    transition: transform 0.3s ease;
+    
+    /* На всякий случай разрешаем браузеру обрабатывать трансформации */
+    will-change: transform;
 }
-
+        
 /* Кнопки «влево-вправо» поверх увеличенного фото */
 .modal-nav-btn {
     position: fixed;
@@ -113,10 +133,19 @@
     
     <div id="photoModal" class="photo-modal" onclick="closePhotoModal()">
     <span class="photo-modal-close" onclick="closePhotoModal()">&times;</span>
+    
+    <!-- Новая кнопка "Предыдущее" -->
     <button class="modal-nav-btn modal-prev" onclick="event.stopPropagation(); changeModalSlide(-1)">&#10094;</button>
-    <img class="photo-modal-content" id="modalImage" onclick="event.stopPropagation()">
+    
+    <!-- Новый контейнер для зума -->
+    <div class="photo-modal-container">
+        <img class="photo-modal-content" id="modalImage" onclick="event.stopPropagation()">
+    </div>
+    
+    <!-- Новая кнопка "Следующее" -->
     <button class="modal-nav-btn modal-next" onclick="event.stopPropagation(); changeModalSlide(1)">&#10095;</button>
     </div>
+    
     
 <header><h1>ЗооРынок 🐾</h1></header>
 
