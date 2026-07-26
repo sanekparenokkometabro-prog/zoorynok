@@ -59,7 +59,7 @@
     top: 50%;
     transform: translateY(-50%);
     background-color: rgba(0, 0, 0, 0.5);
-    color: red;
+    color: wait;
     border: none;
     font-size: 30px;
     padding: 15px 20px;
@@ -69,7 +69,19 @@
 }
 .modal-prev { left: 10px; }
 .modal-next { right: 10px; }       
-    
+
+.photo-modal-close {
+    position: fixed;
+    top: 15px;
+    right: 25px;
+    color: #ff0000;
+    font-size: 50px;
+    font-weight: bold;
+    cursor: pointer;
+    z-index: 100001;
+    text-shadow: 0 0 10px rgba(0, 0, 0, 0.8);
+}
+        
     </style>
 </head>
 <body>
