@@ -72,16 +72,23 @@
 
 .photo-modal-close {
     position: fixed;
-    top: 15px;
-    right: 25px;
-    color: #ff0000;
-    font-size: 50px;
+    top: 20px;
+    right: 30px;
+    color: #ff0000 !important; /* Ярко-красный цвет */
+    font-size: 60px !important;  /* Большой размер */
     font-weight: bold;
     cursor: pointer;
-    z-index: 100001;
-    text-shadow: 0 0 10px rgba(0, 0, 0, 0.8);
+    z-index: 999999;             /* Поверх абсолютно всего */
+    background: rgba(0, 0, 0, 0.5); /* Полупрозрачный фон, чтобы точно не потеряться */
+    width: 60px;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;         /* Круглая аккуратная кнопка */
+    line-height: 1;
 }
-        
+               
     </style>
 </head>
 <body>
