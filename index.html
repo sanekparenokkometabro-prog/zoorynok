@@ -338,7 +338,7 @@ function renderAds() {
         <div class="card">
             <div onclick="openView('${ad.id}')">
                 <img src="${ad.images ? ad.images.split('|')[0] : ''}" loading="lazy">
-                <b>${ad.title}</b><br><small>${ad.price} грн</small>
+                <b>${ad.title}</b><br><small>${ad.price} грн<span style="font-weight: 800; font-size: 1.1em;">
             </div>
             <button onclick="toggleFavorite('${ad.id}')" style="margin-top:5px; width:100%; border:none; background:#eee; color: ${myFavs.includes(Number(ad.id)) ? 'red' : 'gray'}">♥</button>
             ${isMyMode ? `<button onclick="deleteAd('${ad.id}')" style="margin-top:5px; width:100%; border:none; background:#ffeded; color:red;">Удалить</button>` : ''}
