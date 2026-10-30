@@ -373,13 +373,19 @@ function renderAds() {
         }
     }
 
-    function manageMyAds() {
-        const phone = localStorage.getItem('myPhone') || prompt("Введите ваш номер телефона для авторизации объявлений:");
-        if (!phone) return;
-        localStorage.setItem('myPhone', phone);
-        isMyMode = true; 
+       function manageMyAds() {
+        let phone = localStorage.getItem('myPhone');
+        if (!phone) {
+            phone = prompt("Введите ваш номер телефона для авторизации объявлений:");
+            if (!phone) return;
+            localStorage.setItem('myPhone', phone.trim());
+        }
+        
+        // Переключаем режим показать/скрыть мои объявления
+        isMyMode = !isMyMode; 
         renderAds();
     }
+
 
     async function updateMyFavs() {
         const name = localStorage.getItem('myChatName');
