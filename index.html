@@ -526,14 +526,14 @@ function renderAds() {
     }
 
     async function openChat(id) {
-    activeAdId = id; // Обязательно фиксируем ID текущего активного объявления
+    activeAdId = id; 
     hideModal('viewModal');
-    hideModal('myChatsModal'); // Закрываем модалку списка чатов, если она была открыта
+    hideModal('myChatsModal'); 
     showModal('chatModal');
     
     let name = localStorage.getItem('myChatName') || '';
 
-    // Помечаем сообщения прочитанными только если они адресованы нам (не наши)
+    // Помечаем сообщения прочитанными только если они адресованы нам
     await sb.from('messages')
         .update({ is_read: true })
         .eq('ad_id', id)
@@ -542,24 +542,25 @@ function renderAds() {
     // Загружаем сообщения для отображения
     const { data } = await sb.from('messages').select('*').eq('ad_id', id).order('created_at', { ascending: true });
     
-        const { data } = await sb.from('messages').select('*').eq('ad_id', id).order('created_at', { ascending: true });
-    
     document.getElementById('messages').innerHTML = data?.map(m => {
-    const isMyMsg = (m.sender?.trim() === name?.trim());
-    return `
-        <div style="margin-bottom:12px; word-break:break-word; background: ${isMyMsg ? '#e6f7ff' : '#f1f1f1'}; padding: 8px; border-radius: 6px;">
-            <b>${m.sender || 'Аноним'}:</b> ${m.text}
-            ${isMyMsg ? `
-                <div class="msg-actions">
-                    <span onclick="editMessage('${m.id}', \`${m.text.replace(/`/g, '\\`')}\`)">✏️ Редактировать</span>
-                    <span class="delete-btn" onclick="deleteMessage('${m.id}')">🗑️ Удалить</span>
-                </div>
-            ` : ''}
-        </div>`;
-}).join('') || '<div style="color:gray;">Нет сообщений. Начните диалог первым!</div>';
+        const isMyMsg = (m.sender?.trim() === name?.trim());
+        return `
+            <div style="margin-bottom:12px; word-break:break-word; background: ${isMyMsg ? '#e6f7ff' : '#f1f1f1'}; padding: 8px; border-radius: 6px;">
+                <b>${m.sender || 'Аноним'}:</b> ${m.text}
+                ${isMyMsg ? `
+                    <div class="msg-actions">
+                        <span onclick="editMessage('${m.id}', \`${m.text.replace(/`/g, '\\`')}\`)">✏️ Редактировать</span>
+                        <span class="delete-btn" onclick="deleteMessage('${m.id}')">🗑️ Удалить</span>
+                    </div>
+                ` : ''}
+            </div>`;
+    }).join('') || '<div style="color:gray;">Нет сообщений. Начните диалог первым!</div>';
+
     const box = document.getElementById('messages');
     box.scrollTop = box.scrollHeight;
     updateChatIconIndicator();
+}
+
     
     async function sendMsg() {
     const text = document.getElementById('msgText').value.trim();
