@@ -119,20 +119,6 @@
 }
 .modal-prev { left: 10px; }
 .modal-next { right: 10px; }     
-
-    .msg-actions {
-        font-size: 11px;
-        margin-top: 4px;
-        display: flex;
-        gap: 10px;
-    }
-    .msg-actions span {
-        cursor: pointer;
-        color: #007bff;
-    }
-    .msg-actions span.delete-btn {
-        color: #dc3545;
-    }  
         
     </style>
 </head>
@@ -799,41 +785,6 @@ modalImg.addEventListener('touchend', (e) => {
     }
 });    
 
-// Функция редактирования сообщения
-async function editMessage(msgId, oldText) {
-    const newText = prompt("Редактировать сообщение:", oldText);
-    if (newText === null) return; 
-    const trimmed = newText.trim();
-    if (!trimmed) {
-        alert("Сообщение не может быть пустым!");
-        return;
-    }
-
-    const { error } = await sb.from('messages')
-        .update({ text: trimmed })
-        .eq('id', msgId);
-
-    if (error) {
-        alert("Не удалось обновить сообщение.");
-    } else {
-        openChat(activeAdId);
-    }
-
-// Функция удаления сообщения
-async function deleteMessage(msgId) {
-    if (!confirm("Вы действительно хотите удалить это сообщение?")) return;
-    const { error } = await sb.from('messages')
-        .delete()
-        .eq('id', msgId);
-
-    if (error) {
-        alert("Не удалось удалить сообщение.");
-    } else {
-        openChat(activeAdId);
-    }
-}
-
-       
 </script>
 </body>
 </html>
