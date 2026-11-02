@@ -827,12 +827,10 @@ async function editMessage(msgId, oldText) {
     } else {
         openChat(activeAdId);
     }
-}
 
 // Функция удаления сообщения
 async function deleteMessage(msgId) {
     if (!confirm("Вы действительно хотите удалить это сообщение?")) return;
-
     const { error } = await sb.from('messages')
         .delete()
         .eq('id', msgId);
